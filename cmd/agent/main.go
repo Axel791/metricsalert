@@ -1,9 +1,7 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"strings"
+	"log"
 	"time"
 
 	"github.com/Axel791/metricsalert/internal/agent/collector"
@@ -13,32 +11,9 @@ import (
 	"github.com/Axel791/metricsalert/internal/shared/validatiors"
 )
 
-func parseFlags(cfg *config.Config) (string, time.Duration, time.Duration) {
-	address := flag.String("a", cfg.Address, "HTTP server address")
-	reportInterval := flag.Int(
-		"r",
-		int(cfg.ReportInterval),
-		"Frequency of sending metrics to the server (in seconds)",
-	)
-	pollInterval := flag.Int(
-		"p",
-		int(cfg.PollInterval),
-		"Frequency of collecting metrics from runtime (in seconds)",
-	)
-
-	flag.Parse()
-
-	addr := *address
-	if !strings.HasPrefix(addr, "http://") && !strings.HasPrefix(addr, "https://") {
-		addr = "http://" + addr
-	}
-
-	return addr, time.Duration(*reportInterval) * time.Second, time.Duration(*pollInterval) * time.Second
-}
-
 func runAgent(address string, reportInterval, pollInterval time.Duration) {
 	if !validatiors.IsValidAddress(address, true) {
-		fmt.Printf("invalid address: %s\n", address)
+		log.Printf("invalid address: %s\n", address)
 		return
 	}
 
@@ -67,7 +42,7 @@ func runAgent(address string, reportInterval, pollInterval time.Duration) {
 		case <-tickerSender.C:
 			err := metricClient.SendMetrics(metricsDTO)
 			if err != nil {
-				fmt.Printf("error sending metrics: %v\n", err)
+				log.Printf("error sending metrics: %v\n", err)
 			}
 		}
 	}
@@ -76,11 +51,10 @@ func runAgent(address string, reportInterval, pollInterval time.Duration) {
 func main() {
 	cfg, err := config.AgentLoadConfig()
 	if err != nil {
-		fmt.Printf("error loading config: %v\n", err)
-		return
+		log.Fatalf("error loading config: %v\n", err)
 	}
 
-	address, reportInterval, pollInterval := parseFlags(cfg)
+	address, reportInterval, pollInterval := config.ParseFlags(cfg)
 
 	runAgent(address, reportInterval, pollInterval)
 }

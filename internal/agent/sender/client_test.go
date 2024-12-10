@@ -1,10 +1,11 @@
 package sender
 
 import (
+	"testing"
+
 	"github.com/Axel791/metricsalert/internal/agent/model/dto"
 	"github.com/Axel791/metricsalert/internal/agent/sender/mocks"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestSendMetrics(t *testing.T) {

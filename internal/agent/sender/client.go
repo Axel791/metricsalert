@@ -3,11 +3,11 @@ package sender
 import (
 	"bytes"
 	"fmt"
-	"github.com/Axel791/metricsalert/internal/agent/model/dto"
-	"github.com/gojek/heimdall/v7/httpclient"
-	"github.com/pkg/errors"
 	"net/http"
 	"net/url"
+
+	"github.com/Axel791/metricsalert/internal/agent/model/dto"
+	"github.com/gojek/heimdall/v7/httpclient"
 )
 
 type MetricClient struct {
@@ -39,9 +39,8 @@ func (client *MetricClient) SendMetrics(metrics dto.Metrics) error {
 		}
 
 		err := client.sendMetric(name, metricType, value)
-
 		if err != nil {
-			return errors.Wrapf(err, "failed to send metric %s", name)
+			return fmt.Errorf("failed to send metric %s: %w", name, err)
 		}
 	}
 
@@ -55,15 +54,13 @@ func (client *MetricClient) sendMetric(name, metricType string, value interface{
 	u, err := url.Parse(
 		fmt.Sprintf("%s/update/%s/%s/%v", client.baseURL, metricType, name, value),
 	)
-
 	if err != nil {
-		return errors.Wrap(err, "failed to parse URL")
+		return fmt.Errorf("failed to parse URL: %w", err)
 	}
 
 	rsp, err := client.httpClient.Post(u.String(), bytes.NewBuffer(nil), headers)
-
 	if err != nil {
-		return errors.Wrap(err, "failed to send metrics")
+		return fmt.Errorf("failed to send metrics %s: %w", name, err)
 	}
 
 	defer rsp.Body.Close()

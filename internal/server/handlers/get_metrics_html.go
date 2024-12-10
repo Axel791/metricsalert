@@ -4,18 +4,18 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/Axel791/metricsalert/internal/server/storage"
+	"github.com/Axel791/metricsalert/internal/server/repositories"
 )
 
 type GetMetricsHTMLHandler struct {
-	storage storage.Store
+	storage repositories.Store
 }
 
-func NewGetMetricsHTMLHandler(storage storage.Store) *GetMetricsHTMLHandler {
+func NewGetMetricsHTMLHandler(storage repositories.Store) *GetMetricsHTMLHandler {
 	return &GetMetricsHTMLHandler{storage: storage}
 }
 
-func (h *GetMetricsHTMLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *GetMetricsHTMLHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	metrics := h.storage.GetAllMetrics()
 
 	const tpl = `

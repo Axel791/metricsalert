@@ -1,34 +1,27 @@
 package main
 
 import (
-	"flag"
-	"fmt"
+	"log"
+	"net/http"
+
 	"github.com/Axel791/metricsalert/internal/server/config"
 	"github.com/Axel791/metricsalert/internal/server/handlers"
-	"github.com/Axel791/metricsalert/internal/server/storage/repositories"
+	"github.com/Axel791/metricsalert/internal/server/repositories"
 	"github.com/Axel791/metricsalert/internal/shared/validatiors"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
-	"net/http"
+	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 )
-
-func parseFlags(cfg *config.Config) string {
-	addr := flag.String("a", cfg.Address, "HTTP server address")
-	flag.Parse()
-	return *addr
-}
 
 func main() {
 	cfg, err := config.ServerLoadConfig()
 	if err != nil {
-		fmt.Printf("error loading config: %v", err)
+		log.Fatalf("error loading config: %v", err)
 	}
 
-	addr := parseFlags(cfg)
+	addr := config.ParseFlags(cfg)
 
 	if !validatiors.IsValidAddress(addr, false) {
-		fmt.Printf("invalid address: %s\n", addr)
-		return
+		log.Fatalf("invalid address: %s\n", addr)
 	}
 
 	router := chi.NewRouter()
@@ -46,6 +39,6 @@ func main() {
 
 	err = http.ListenAndServe(addr, router)
 	if err != nil {
-		panic(err)
+		log.Fatalf("error starting server: %v", err)
 	}
 }

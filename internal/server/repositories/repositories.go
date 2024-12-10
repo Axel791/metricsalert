@@ -1,4 +1,4 @@
-package storage
+package repositories
 
 type Store interface {
 	UpdateGauge(name string, value float64) float64

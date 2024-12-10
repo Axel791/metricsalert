@@ -1,10 +1,11 @@
 package handlers
 
 import (
-	"github.com/Axel791/metricsalert/internal/server/storage"
-	"github.com/go-chi/chi/v5"
 	"net/http"
 	"strconv"
+
+	"github.com/Axel791/metricsalert/internal/server/repositories"
+	"github.com/go-chi/chi/v5"
 )
 
 const (
@@ -13,10 +14,10 @@ const (
 )
 
 type UpdateMetricHandler struct {
-	storage storage.Store
+	storage repositories.Store
 }
 
-func NewUpdateMetricHandler(storage storage.Store) *UpdateMetricHandler {
+func NewUpdateMetricHandler(storage repositories.Store) *UpdateMetricHandler {
 	return &UpdateMetricHandler{storage}
 }
 
