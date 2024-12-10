@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 
@@ -16,8 +15,7 @@ import (
 func main() {
 	cfg, err := config.ServerLoadConfig()
 	if err != nil {
-		fmt.Printf("error")
-		//log.Fatalf("error loading config: %v", err)
+		log.Fatalf("error loading config: %v", err)
 	}
 
 	addr := config.ParseFlags(cfg)

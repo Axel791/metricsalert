@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/Axel791/metricsalert/internal/agent/collector/mocks"
+
 	"github.com/stretchr/testify/require"
 )
 

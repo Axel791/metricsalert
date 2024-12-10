@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/Axel791/metricsalert/internal/server/repositories"
+
 	"github.com/go-chi/chi/v5"
 )
 
