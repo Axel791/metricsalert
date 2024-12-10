@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
@@ -8,14 +9,15 @@ import (
 	"github.com/Axel791/metricsalert/internal/server/handlers"
 	"github.com/Axel791/metricsalert/internal/server/repositories"
 	"github.com/Axel791/metricsalert/internal/shared/validatiors"
-	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
 	cfg, err := config.ServerLoadConfig()
 	if err != nil {
-		log.Fatalf("error loading config: %v", err)
+		fmt.Printf("error")
+		//log.Fatalf("error loading config: %v", err)
 	}
 
 	addr := config.ParseFlags(cfg)
