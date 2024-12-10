@@ -7,6 +7,7 @@ import (
 	"net/url"
 
 	"github.com/Axel791/metricsalert/internal/agent/model/dto"
+
 	"github.com/gojek/heimdall/v7/httpclient"
 )
 

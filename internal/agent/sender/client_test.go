@@ -5,6 +5,7 @@ import (
 
 	"github.com/Axel791/metricsalert/internal/agent/model/dto"
 	"github.com/Axel791/metricsalert/internal/agent/sender/mocks"
+
 	"github.com/stretchr/testify/require"
 )
 
