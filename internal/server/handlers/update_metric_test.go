@@ -8,8 +8,6 @@ import (
 
 	"github.com/Axel791/metricsalert/internal/server/repositories/mocks"
 
-	"github.com/Axel791/metricsalert/internal/server/repositories/mocks"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/require"
 )
