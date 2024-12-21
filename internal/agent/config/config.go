@@ -1,8 +1,7 @@
 package config
 
 import (
-	"log"
-
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -26,7 +25,7 @@ func AgentLoadConfig() (*Config, error) {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Printf("filed to find conf file, set default value: %v.", err)
+		log.Infof("filed to find conf file, set default value: %v.", err)
 	}
 	var cfg Config
 	if err := viper.Unmarshal(&cfg); err != nil {
