@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"time"
 
 	"github.com/Axel791/metricsalert/internal/agent/collector"
@@ -9,12 +8,12 @@ import (
 	"github.com/Axel791/metricsalert/internal/agent/model/dto"
 	"github.com/Axel791/metricsalert/internal/agent/sender"
 	"github.com/Axel791/metricsalert/internal/shared/validatiors"
+	log "github.com/sirupsen/logrus"
 )
 
 func runAgent(address string, reportInterval, pollInterval time.Duration) {
 	if !validatiors.IsValidAddress(address, true) {
-		log.Printf("invalid address: %s\n", address)
-		return
+		log.Fatalf("invalid address: %s\n", address)
 	}
 
 	tickerCollector := time.NewTicker(pollInterval)
@@ -63,7 +62,7 @@ func runAgent(address string, reportInterval, pollInterval time.Duration) {
 		case <-tickerSender.C:
 			err := metricClient.SendMetrics(metricsDTO)
 			if err != nil {
-				log.Printf("error sending metrics: %v\n", err)
+				log.Errorf("error sending metrics: %v\n", err)
 			}
 		}
 	}

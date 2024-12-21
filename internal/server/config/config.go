@@ -1,8 +1,7 @@
 package config
 
 import (
-	"log"
-
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -22,7 +21,7 @@ func ServerLoadConfig() (*Config, error) {
 	viper.AutomaticEnv()
 
 	if err := viper.ReadInConfig(); err != nil {
-		log.Printf("filed find file config set defoult value: %v", err)
+		log.Infof("filed find file config set defoult value: %v", err)
 	}
 
 	var cfg Config
