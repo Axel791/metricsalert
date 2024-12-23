@@ -32,6 +32,7 @@ func main() {
 	router := chi.NewRouter()
 
 	router.Use(middleware.WithLogging)
+	router.Use(middleware.GzipMiddleware)
 
 	storage := repositories.NewMetricRepository()
 	metricsService := services.NewMetricsService(storage)
