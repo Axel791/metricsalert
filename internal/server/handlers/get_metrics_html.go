@@ -4,19 +4,33 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/Axel791/metricsalert/internal/server/repositories"
+	"github.com/Axel791/metricsalert/internal/server/model/domain"
+	"github.com/Axel791/metricsalert/internal/server/services"
 )
 
 type GetMetricsHTMLHandler struct {
-	storage repositories.Store
+	metricService services.Metric
 }
 
-func NewGetMetricsHTMLHandler(storage repositories.Store) *GetMetricsHTMLHandler {
-	return &GetMetricsHTMLHandler{storage: storage}
+func NewGetMetricsHTMLHandler(metricService services.Metric) *GetMetricsHTMLHandler {
+	return &GetMetricsHTMLHandler{metricService: metricService}
 }
 
 func (h *GetMetricsHTMLHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
-	metrics := h.storage.GetAllMetrics()
+	metrics := h.metricService.GetAllMetric()
+
+	metricsMap := make(map[string]interface{})
+	for _, metric := range metrics {
+		var value interface{}
+		if metric.MType == domain.Counter {
+			value = metric.Delta.Int64
+		} else if metric.MType == domain.Gauge {
+			value = metric.Value.Float64
+		} else {
+			value = "unknown"
+		}
+		metricsMap[metric.ID] = value
+	}
 
 	const tpl = `
     <!DOCTYPE html>
@@ -50,7 +64,7 @@ func (h *GetMetricsHTMLHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := tmpl.Execute(w, metrics); err != nil {
+	if err := tmpl.Execute(w, metricsMap); err != nil {
 		http.Error(w, "Ошибка при генерации страницы", http.StatusInternalServerError)
 		return
 	}

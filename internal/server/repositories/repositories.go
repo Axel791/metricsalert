@@ -1,8 +1,10 @@
 package repositories
 
+import "github.com/Axel791/metricsalert/internal/server/model/domain"
+
 type Store interface {
-	UpdateGauge(name string, value float64) float64
-	UpdateCounter(name string, value int64) int64
-	GetMetric(name string) interface{}
-	GetAllMetrics() map[string]interface{}
+	UpdateGauge(name string, value float64) domain.Metrics
+	UpdateCounter(name string, value int64) domain.Metrics
+	GetMetric(metricsDomain domain.Metrics) domain.Metrics
+	GetAllMetrics() map[string]domain.Metrics
 }

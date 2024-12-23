@@ -2,12 +2,14 @@ package sender
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 
-	"github.com/Axel791/metricsalert/internal/agent/model/dto"
+	log "github.com/sirupsen/logrus"
 
+	"github.com/Axel791/metricsalert/internal/agent/model/api"
 	"github.com/gojek/heimdall/v7/httpclient"
 )
 
@@ -24,46 +26,47 @@ func NewMetricClient(baseURL string) *MetricClient {
 	}
 }
 
-func (client *MetricClient) SendMetrics(metrics dto.Metrics) error {
-	metricsMap := map[string]interface{}{
-		"alloc":         metrics.Alloc,
-		"buckHashSys":   metrics.BuckHashSys,
-		"frees":         metrics.Frees,
-		"gcCPUFraction": metrics.GCCPUFraction,
+func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
+	metricsList := []api.MetricPost{
+		{ID: "alloc", MType: "gauge", Value: metrics.Alloc},
+		{ID: "buckHashSys", MType: "gauge", Value: metrics.BuckHashSys},
+		{ID: "frees", MType: "gauge", Value: metrics.Frees},
+		{ID: "gcCPUFraction", MType: "gauge", Value: metrics.GCCPUFraction},
 	}
 
-	for name, value := range metricsMap {
-		metricType := "counter"
-
-		if _, ok := value.(float64); ok {
-			metricType = "gauge"
-		}
-
-		err := client.sendMetric(name, metricType, value)
+	for _, metric := range metricsList {
+		err := client.sendMetric(metric)
 		if err != nil {
-			return fmt.Errorf("failed to send metric %s: %w", name, err)
+			log.Errorf("failed to send metric %s: %v", metric.ID, err)
 		}
 	}
 
 	return nil
 }
 
-func (client *MetricClient) sendMetric(name, metricType string, value interface{}) error {
+func (client *MetricClient) sendMetric(metric api.MetricPost) error {
 	headers := http.Header{}
-	headers.Set("Content-Type", "text/plain")
+	headers.Set("Content-Type", "application/json")
 
-	u, err := url.Parse(
-		fmt.Sprintf("%s/update/%s/%s/%v", client.baseURL, metricType, name, value),
-	)
+	body, err := json.Marshal(metric)
+	if err != nil {
+		return fmt.Errorf("failed to marshal metric: %w", err)
+	}
+
+	u, err := url.Parse(fmt.Sprintf("%s/update", client.baseURL))
 	if err != nil {
 		return fmt.Errorf("failed to parse URL: %w", err)
 	}
 
-	rsp, err := client.httpClient.Post(u.String(), bytes.NewBuffer(nil), headers)
+	rsp, err := client.httpClient.Post(u.String(), bytes.NewBuffer(body), headers)
 	if err != nil {
-		return fmt.Errorf("failed to send metrics %s: %w", name, err)
+		return fmt.Errorf("failed to send metrics %s: %w", metric.ID, err)
 	}
 
 	defer rsp.Body.Close()
+	if rsp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", rsp.StatusCode)
+	}
+
 	return nil
 }

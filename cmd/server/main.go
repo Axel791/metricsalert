@@ -7,6 +7,7 @@ import (
 	"github.com/Axel791/metricsalert/internal/server/handlers"
 	"github.com/Axel791/metricsalert/internal/server/middleware"
 	"github.com/Axel791/metricsalert/internal/server/repositories"
+	"github.com/Axel791/metricsalert/internal/server/services"
 	"github.com/Axel791/metricsalert/internal/shared/logger"
 	"github.com/Axel791/metricsalert/internal/shared/validatiors"
 
@@ -33,21 +34,22 @@ func main() {
 	router.Use(middleware.WithLogging)
 
 	storage := repositories.NewMetricRepository()
+	metricsService := services.NewMetricsService(storage)
 
 	router.Method(
 		http.MethodPost,
-		"/update/{metricType}/{name}/{value}",
-		handlers.NewUpdateMetricHandler(storage),
+		"/update",
+		handlers.NewUpdateMetricHandler(metricsService),
 	)
 	router.Method(
-		http.MethodGet,
-		"/value/{metricType}/{name}",
-		handlers.NewGetMetricHandler(storage),
+		http.MethodPost,
+		"/value",
+		handlers.NewGetMetricHandler(metricsService),
 	)
 	router.Method(
 		http.MethodGet,
 		"/",
-		handlers.NewGetMetricsHTMLHandler(storage),
+		handlers.NewGetMetricsHTMLHandler(metricsService),
 	)
 
 	log.Infof("server started on %s", addr)

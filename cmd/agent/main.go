@@ -5,7 +5,7 @@ import (
 
 	"github.com/Axel791/metricsalert/internal/agent/collector"
 	"github.com/Axel791/metricsalert/internal/agent/config"
-	"github.com/Axel791/metricsalert/internal/agent/model/dto"
+	"github.com/Axel791/metricsalert/internal/agent/model/api"
 	"github.com/Axel791/metricsalert/internal/agent/sender"
 	"github.com/Axel791/metricsalert/internal/shared/validatiors"
 	log "github.com/sirupsen/logrus"
@@ -24,14 +24,14 @@ func runAgent(address string, reportInterval, pollInterval time.Duration) {
 	defer tickerCollector.Stop()
 	defer tickerSender.Stop()
 
-	var metricsDTO dto.Metrics
+	var metricsDTO api.Metrics
 
 	for {
 		select {
 		case <-tickerCollector.C:
 			metric := collector.Collector()
 
-			metricsDTO = dto.Metrics{
+			metricsDTO = api.Metrics{
 				Alloc:         float64(metric.Alloc) / 1024,
 				BuckHashSys:   float64(metric.BuckHashSys) / 1024,
 				Frees:         float64(metric.Frees),

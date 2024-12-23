@@ -1,67 +1,57 @@
 package handlers
 
 import (
-	"fmt"
-	"log"
+	"encoding/json"
+
 	"net/http"
-	"strconv"
 
-	"github.com/Axel791/metricsalert/internal/server/repositories"
+	"github.com/Axel791/metricsalert/internal/server/model/api"
+	"github.com/Axel791/metricsalert/internal/server/model/domain"
+	"github.com/Axel791/metricsalert/internal/server/services"
 
-	"github.com/go-chi/chi/v5"
+	log "github.com/sirupsen/logrus"
 )
 
 type GetMetricHandler struct {
-	storage repositories.Store
+	metricService services.Metric
 }
 
-func NewGetMetricHandler(storage repositories.Store) *GetMetricHandler {
-	return &GetMetricHandler{storage}
+func NewGetMetricHandler(metricService services.Metric) *GetMetricHandler {
+	return &GetMetricHandler{metricService: metricService}
 }
 
 func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	metricType := chi.URLParam(r, "metricType")
-	name := chi.URLParam(r, "name")
+	var input api.GetMetric
 
-	if name == "" {
-		log.Printf("GetMetricHandler: missing metric name")
-		http.Error(w, "invalid metric name", http.StatusNotFound)
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		log.Infof("UpdateMetricHandler: failed to decode request body: %v", err)
+		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
 
-	if metricType != Counter && metricType != Gauge {
-		log.Printf("GetMetricHandler: invalid metric type: %s", metricType)
-		http.Error(w, "invalid metric type", http.StatusBadRequest)
-		return
-	}
-
-	value := h.storage.GetMetric(name)
-	if value == nil {
-		log.Printf("GetMetricHandler: metric not found: %s (type: %s)", name, metricType)
-		http.Error(w, "metric not found", http.StatusNotFound)
-		return
-	}
-
-	var valueStr string
-	switch v := value.(type) {
-	case string:
-		valueStr = v
-	case float64:
-		valueStr = strconv.FormatFloat(v, 'g', -1, 64)
-	case int64:
-		valueStr = strconv.FormatInt(v, 10)
-	default:
-		valueStr = strconv.FormatFloat(float64(v.(int)), 'g', -1, 64)
-	}
-
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(valueStr)))
-	w.WriteHeader(http.StatusOK)
-
-	_, err := w.Write([]byte(valueStr))
+	metricDTO, err := h.metricService.GetMetric(input.MType, input.ID)
 	if err != nil {
-		log.Printf("GetMetricHandler: failed to write response for metric %s (type: %s): %v", name, metricType, err)
-		http.Error(w, "invalid metric", http.StatusInternalServerError)
+		log.Printf("GetMetricHandler: error getting metric: %v", err)
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	apiResponse := api.Metrics{
+		ID:    metricDTO.ID,
+		MType: metricDTO.MType,
+	}
+
+	if metricDTO.MType == domain.Counter {
+		apiResponse.Delta = metricDTO.Delta.Int64
+	} else if metricDTO.MType == domain.Gauge {
+		apiResponse.Value = metricDTO.Value.Float64
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(apiResponse); err != nil {
+		log.Printf("GetMetricHandler: error encoding response: %v", err)
+		http.Error(w, "failed to encode response", http.StatusInternalServerError)
 		return
 	}
 }

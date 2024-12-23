@@ -1,4 +1,4 @@
-package dto
+package api
 
 type Metrics struct {
 	Alloc         float64 `json:"alloc"`
@@ -26,4 +26,11 @@ type Metrics struct {
 	StackInuse    float64 `json:"stackInuse"`
 	Sys           float64 `json:"sys"`
 	TotalAlloc    float64 `json:"totalAlloc"`
+}
+
+type MetricPost struct {
+	ID    string  `json:"id"`
+	MType string  `json:"type"`
+	Delta int64   `json:"delta,omitempty"`
+	Value float64 `json:"value,omitempty"`
 }
