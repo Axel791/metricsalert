@@ -120,3 +120,37 @@ func (client *MetricClient) sendMetric(metric api.MetricPost) error {
 
 	return nil
 }
+
+func (client *MetricClient) HealthCheck() error {
+	u, err := url.Parse(fmt.Sprintf("%s/healthcheck", client.baseURL))
+	if err != nil {
+		return fmt.Errorf("failed to parse URL: %w", err)
+	}
+
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+
+	rsp, err := client.httpClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("failed to send healthcheck request: %w", err)
+	}
+	defer rsp.Body.Close()
+
+	if rsp.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", rsp.StatusCode)
+	}
+
+	var response map[string]interface{}
+	if err := json.NewDecoder(rsp.Body).Decode(&response); err != nil {
+		return fmt.Errorf("failed to decode healthcheck response: %w", err)
+	}
+
+	status, ok := response["status"].(string)
+	if !ok || status != "true" {
+		return fmt.Errorf("unexpected healthcheck response: %v", response)
+	}
+
+	return nil
+}

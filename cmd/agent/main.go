@@ -1,6 +1,8 @@
 package main
 
 import (
+	"math/rand"
+	"sync/atomic"
 	"time"
 
 	"github.com/Axel791/metricsalert/internal/agent/collector"
@@ -26,10 +28,16 @@ func runAgent(address string, reportInterval, pollInterval time.Duration) {
 
 	var metricsDTO api.Metrics
 
+	var pollCount int64 = 0
+
 	for {
 		select {
 		case <-tickerCollector.C:
 			metric := collector.Collector()
+
+			atomic.AddInt64(&pollCount, 1)
+
+			randomValue := rand.Float64() * 100.0 // н
 
 			metricsDTO = api.Metrics{
 				Alloc:         float64(metric.Alloc) / 1024,
@@ -57,6 +65,8 @@ func runAgent(address string, reportInterval, pollInterval time.Duration) {
 				StackInuse:    float64(metric.StackInuse) / 1024,
 				Sys:           float64(metric.Sys) / 1024,
 				TotalAlloc:    float64(metric.TotalAlloc) / 1024,
+				PollCount:     pollCount,
+				RandomValue:   randomValue,
 			}
 
 		case <-tickerSender.C:

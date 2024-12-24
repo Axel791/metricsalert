@@ -50,6 +50,10 @@ func main() {
 		"/value/",
 		handlers.NewGetMetricHandler(metricsService),
 	)
+	router.Get(
+		"/healthcheck/",
+		handlers.HealthCheckHandler,
+	)
 	router.Method(
 		http.MethodGet,
 		"/",
