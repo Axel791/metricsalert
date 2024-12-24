@@ -61,11 +61,11 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 
 	err := client.HealthCheck()
 	if err != nil {
-		log.Debugf("Failed to connect with server: %v", err)
+		log.Infof("Failed to connect with server: %v", err)
 	}
 
 	for _, metric := range metricsList {
-		log.Debugf(
+		log.Infof(
 			"Sending metric: %s %s %v %d", metric.ID, metric.MType, metric.Value, metric.Delta,
 		)
 		err := client.sendMetric(metric)
