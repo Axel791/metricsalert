@@ -79,7 +79,7 @@ func runAgent(address string, reportInterval, pollInterval time.Duration) {
 }
 
 func main() {
-	time.Sleep(10 * time.Second)
+	time.Sleep(7 * time.Second)
 	log.Infof("agent started")
 	cfg, err := config.AgentLoadConfig()
 	if err != nil {
