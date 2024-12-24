@@ -47,7 +47,7 @@ func main() {
 	)
 	router.Method(
 		http.MethodPost,
-		"/value",
+		"/value/",
 		handlers.NewGetMetricHandler(metricsService),
 	)
 	router.Method(

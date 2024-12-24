@@ -29,6 +29,8 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	log.Infof("UpdateMetricHandler: received request for metric: %v", input)
+
 	metricDTO, err := h.metricService.GetMetric(input.MType, input.ID)
 	if err != nil {
 		log.Printf("GetMetricHandler: error getting metric: %v", err)
