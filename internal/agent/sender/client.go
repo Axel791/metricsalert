@@ -63,7 +63,7 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 	err := client.HealthCheck()
 	if err != nil {
 		log.Infof("Failed to connect with server: %v", err)
-		time.Sleep(4 * time.Second)
+		time.Sleep(8 * time.Second)
 	}
 
 	for _, metric := range metricsList {
