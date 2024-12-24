@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"time"
-
 	"net/http"
 
 	"github.com/Axel791/metricsalert/internal/server/model/api"
@@ -22,7 +20,6 @@ func NewGetMetricHandler(metricService services.Metric) *GetMetricHandler {
 }
 
 func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	time.Sleep(1 * time.Second)
 	var input api.GetMetric
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -30,8 +27,6 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
-
-	log.Infof("UpdateMetricHandler: received request for metric: %v", input)
 
 	metricDTO, err := h.metricService.GetMetric(input.MType, input.ID)
 	if err != nil {

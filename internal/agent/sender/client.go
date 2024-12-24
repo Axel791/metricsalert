@@ -5,14 +5,12 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"github.com/Axel791/metricsalert/internal/agent/model/api"
+	"github.com/gojek/heimdall/v7/httpclient"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"net/url"
-	"time"
-
-	"github.com/Axel791/metricsalert/internal/agent/model/api"
-	"github.com/gojek/heimdall/v7/httpclient"
 )
 
 type MetricClient struct {
@@ -30,7 +28,7 @@ func NewMetricClient(baseURL string) *MetricClient {
 
 func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 	metricsList := []api.MetricPost{
-		//{ID: "Alloc", MType: "gauge", Value: metrics.Alloc},
+		{ID: "Alloc", MType: "gauge", Value: metrics.Alloc},
 		{ID: "BuckHashSys", MType: "gauge", Value: metrics.BuckHashSys},
 		{ID: "Frees", MType: "gauge", Value: metrics.Frees},
 		{ID: "GCCPUFraction", MType: "gauge", Value: metrics.GCCPUFraction},
@@ -58,7 +56,7 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 		{ID: "PollCount", MType: "counter", Delta: metrics.PollCount},
 		{ID: "RandomValue", MType: "gauge", Value: metrics.RandomValue},
 	}
-	time.Sleep(2 * time.Second)
+
 	for _, metric := range metricsList {
 		log.Infof(
 			"Sending metric: %s %s %v %d", metric.ID, metric.MType, metric.Value, metric.Delta,
