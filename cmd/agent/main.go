@@ -79,7 +79,6 @@ func runAgent(address string, reportInterval, pollInterval time.Duration) {
 }
 
 func main() {
-	time.Sleep(7 * time.Second)
 	log.Infof("agent started")
 
 	startTime := time.Now().Format("2006-01-02 15:04:05") // Форматирование времени
