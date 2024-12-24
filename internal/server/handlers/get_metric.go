@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"time"
 
 	"net/http"
 
@@ -21,6 +22,7 @@ func NewGetMetricHandler(metricService services.Metric) *GetMetricHandler {
 }
 
 func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	time.Sleep(1 * time.Second)
 	var input api.GetMetric
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {

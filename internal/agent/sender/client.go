@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/Axel791/metricsalert/internal/agent/model/api"
 	"github.com/gojek/heimdall/v7/httpclient"
@@ -57,7 +58,7 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 		{ID: "PollCount", MType: "counter", Delta: metrics.PollCount},
 		{ID: "RandomValue", MType: "gauge", Value: metrics.RandomValue},
 	}
-
+	time.Sleep(2 * time.Second)
 	for _, metric := range metricsList {
 		log.Infof(
 			"Sending metric: %s %s %v %d", metric.ID, metric.MType, metric.Value, metric.Delta,
