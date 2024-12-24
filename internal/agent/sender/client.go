@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -62,6 +63,7 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 	err := client.HealthCheck()
 	if err != nil {
 		log.Infof("Failed to connect with server: %v", err)
+		time.Sleep(4 * time.Second)
 	}
 
 	for _, metric := range metricsList {
