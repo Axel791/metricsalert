@@ -2,6 +2,7 @@ package main
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/Axel791/metricsalert/internal/server/handlers/deprecated"
 
@@ -71,6 +72,9 @@ func main() {
 		"/value/{metricType}/{name}",
 		deprecated.NewGetMetricHandler(storage),
 	)
+	startTime := time.Now().Format("2006-01-02 15:04:05") // Форматирование времени
+
+	log.Infof("Server started at %s", startTime)
 
 	log.Infof("server started on %s", addr)
 	err = http.ListenAndServe(addr, router)
