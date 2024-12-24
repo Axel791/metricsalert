@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/Axel791/metricsalert/internal/server/handlers/deprecated"
 	"net/http"
 
 	"github.com/Axel791/metricsalert/internal/server/config"
@@ -37,6 +38,7 @@ func main() {
 	storage := repositories.NewMetricRepository()
 	metricsService := services.NewMetricsService(storage)
 
+	// Актуальные маршруты
 	router.Method(
 		http.MethodPost,
 		"/update",
@@ -51,6 +53,18 @@ func main() {
 		http.MethodGet,
 		"/",
 		handlers.NewGetMetricsHTMLHandler(metricsService),
+	)
+
+	// Устаревшие маршруты
+	router.Method(
+		http.MethodPost,
+		"/update/{metricType}/{name}/{value}",
+		deprecated.NewUpdateMetricHandler(storage),
+	)
+	router.Method(
+		http.MethodGet,
+		"/value/{metricType}/{name}",
+		deprecated.NewGetMetricHandler(storage),
 	)
 
 	log.Infof("server started on %s", addr)
