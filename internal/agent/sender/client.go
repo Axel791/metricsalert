@@ -55,6 +55,8 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 		{ID: "StackInuse", MType: "gauge", Value: metrics.StackInuse},
 		{ID: "Sys", MType: "gauge", Value: metrics.Sys},
 		{ID: "TotalAlloc", MType: "gauge", Value: metrics.TotalAlloc},
+		{ID: "PollCount", MType: "counter", Delta: metrics.PollCount},
+		{ID: "RandomValue", MType: "gauge", Value: metrics.RandomValue},
 	}
 
 	for _, metric := range metricsList {
@@ -116,40 +118,6 @@ func (client *MetricClient) sendMetric(metric api.MetricPost) error {
 
 	if rsp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code: %d, response: %s", rsp.StatusCode, string(responseBody))
-	}
-
-	return nil
-}
-
-func (client *MetricClient) HealthCheck() error {
-	u, err := url.Parse(fmt.Sprintf("%s/healthcheck", client.baseURL))
-	if err != nil {
-		return fmt.Errorf("failed to parse URL: %w", err)
-	}
-
-	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
-
-	rsp, err := client.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to send healthcheck request: %w", err)
-	}
-	defer rsp.Body.Close()
-
-	if rsp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", rsp.StatusCode)
-	}
-
-	var response map[string]interface{}
-	if err := json.NewDecoder(rsp.Body).Decode(&response); err != nil {
-		return fmt.Errorf("failed to decode healthcheck response: %w", err)
-	}
-
-	status, ok := response["status"].(string)
-	if !ok || status != "true" {
-		return fmt.Errorf("unexpected healthcheck response: %v", response)
 	}
 
 	return nil
