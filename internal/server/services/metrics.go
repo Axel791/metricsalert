@@ -26,7 +26,7 @@ func (ms *MetricsService) GetMetric(metricType, name string) (dto.Metrics, error
 		MType: metricType,
 	}
 
-	if err := metric.ValidateMetricId(); err != nil {
+	if err := metric.ValidateMetricID(); err != nil {
 		return metricsDTO, err
 	}
 
@@ -57,7 +57,7 @@ func (ms *MetricsService) CreateOrUpdateMetric(metricType, name string, value in
 		MType: metricType,
 	}
 
-	if err := metric.ValidateMetricId(); err != nil {
+	if err := metric.ValidateMetricID(); err != nil {
 		return metricsDTO, err
 	}
 

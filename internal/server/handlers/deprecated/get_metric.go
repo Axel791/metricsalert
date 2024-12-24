@@ -28,7 +28,7 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		MType: metricType,
 	}
 
-	if err := metric.ValidateMetricId(); err != nil {
+	if err := metric.ValidateMetricID(); err != nil {
 		http.Error(w, "invalid metric name", http.StatusBadRequest)
 		return
 	}

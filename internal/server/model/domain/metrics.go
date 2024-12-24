@@ -25,7 +25,7 @@ func (m *Metrics) ValidateMetricsType() error {
 	return nil
 }
 
-func (m *Metrics) ValidateMetricId() error {
+func (m *Metrics) ValidateMetricID() error {
 	if m.ID == "" {
 		return errors.New("metric id is required")
 	}

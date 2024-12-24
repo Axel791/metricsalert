@@ -7,7 +7,6 @@ import (
 	"strings"
 )
 
-// GzipMiddleware обрабатывает входящие и исходящие gzip-запросы/ответы.
 func GzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
@@ -18,14 +17,6 @@ func GzipMiddleware(next http.Handler) http.Handler {
 			}
 			defer gzipReader.Close()
 			r.Body = io.NopCloser(gzipReader)
-		}
-
-		if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-			gzWriter := gzip.NewWriter(w)
-			defer gzWriter.Close()
-
-			w.Header().Set("Content-Encoding", "gzip")
-			w = &gzipResponseWriter{ResponseWriter: w, Writer: gzWriter}
 		}
 
 		next.ServeHTTP(w, r)
