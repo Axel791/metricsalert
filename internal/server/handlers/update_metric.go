@@ -28,9 +28,9 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	var value interface{}
 	if input.MType == domain.Counter {
-		value = input.Value
-	} else {
 		value = input.Delta
+	} else {
+		value = input.Value
 	}
 
 	metricDTO, err := h.metricService.CreateOrUpdateMetric(input.MType, input.ID, value)
