@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/Axel791/metricsalert/internal/server/handlers/deprecated"
 	"net/http"
+
+	"github.com/Axel791/metricsalert/internal/server/handlers/deprecated"
 
 	"github.com/Axel791/metricsalert/internal/server/config"
 	"github.com/Axel791/metricsalert/internal/server/handlers"
