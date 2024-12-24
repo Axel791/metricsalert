@@ -21,6 +21,10 @@ import (
 func main() {
 	logger.InitLogger()
 
+	startTimeMain := time.Now().Format("2006-01-02 15:04:05")
+
+	log.Infof("Server main started at %s", startTimeMain)
+
 	cfg, err := config.ServerLoadConfig()
 	if err != nil {
 		log.Fatalf("error loading config: %v", err)
