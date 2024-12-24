@@ -30,7 +30,7 @@ func NewMetricClient(baseURL string) *MetricClient {
 
 func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 	metricsList := []api.MetricPost{
-		{ID: "Alloc", MType: "gauge", Value: metrics.Alloc},
+		//{ID: "Alloc", MType: "gauge", Value: metrics.Alloc},
 		{ID: "BuckHashSys", MType: "gauge", Value: metrics.BuckHashSys},
 		{ID: "Frees", MType: "gauge", Value: metrics.Frees},
 		{ID: "GCCPUFraction", MType: "gauge", Value: metrics.GCCPUFraction},
