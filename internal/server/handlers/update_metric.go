@@ -32,6 +32,10 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	} else {
 		value = input.Value
 	}
+	log.Infof(
+		"UpdateMetricHandler: received metric value: %s %s %v %d",
+		input.ID, input.MType, input.Value, input.Delta,
+	)
 
 	metricDTO, err := h.metricService.CreateOrUpdateMetric(input.MType, input.ID, value)
 	if err != nil {
