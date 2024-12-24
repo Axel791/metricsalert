@@ -37,7 +37,7 @@ func runAgent(address string, reportInterval, pollInterval time.Duration) {
 
 			atomic.AddInt64(&pollCount, 1)
 
-			randomValue := rand.Float64() * 100.0 // н
+			randomValue := rand.Float64() * 100.0
 
 			metricsDTO = api.Metrics{
 				Alloc:         float64(metric.Alloc) / 1024,
@@ -70,13 +70,8 @@ func runAgent(address string, reportInterval, pollInterval time.Duration) {
 			}
 
 		case <-tickerSender.C:
-			err := metricClient.HealthCheck()
-			if err != nil {
-				log.Warningf("Server down, skipping metrics send: %v", err)
-				return
-			}
 
-			err = metricClient.SendMetrics(metricsDTO)
+			err := metricClient.SendMetrics(metricsDTO)
 			if err != nil {
 				log.Errorf("error sending metrics: %v\n", err)
 			}
