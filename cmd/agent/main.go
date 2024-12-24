@@ -70,7 +70,13 @@ func runAgent(address string, reportInterval, pollInterval time.Duration) {
 			}
 
 		case <-tickerSender.C:
-			err := metricClient.SendMetrics(metricsDTO)
+			err := metricClient.HealthCheck()
+			if err != nil {
+				log.Warningf("Server down, skipping metrics send: %v", err)
+				return
+			}
+
+			err = metricClient.SendMetrics(metricsDTO)
 			if err != nil {
 				log.Errorf("error sending metrics: %v\n", err)
 			}
