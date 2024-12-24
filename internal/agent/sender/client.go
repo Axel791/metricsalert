@@ -5,12 +5,10 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"net/url"
-	"time"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/Axel791/metricsalert/internal/agent/model/api"
 	"github.com/gojek/heimdall/v7/httpclient"
@@ -58,12 +56,6 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 		{ID: "TotalAlloc", MType: "gauge", Value: metrics.TotalAlloc},
 		{ID: "PollCount", MType: "counter", Delta: metrics.PollCount},
 		{ID: "RandomValue", MType: "gauge", Value: metrics.RandomValue},
-	}
-
-	err := client.HealthCheck()
-	if err != nil {
-		log.Infof("Failed to connect with server: %v", err)
-		time.Sleep(8 * time.Second)
 	}
 
 	for _, metric := range metricsList {
