@@ -13,6 +13,8 @@ import (
 	"net/url"
 )
 
+const maxRetries = 5
+
 type MetricClient struct {
 	httpClient *httpclient.Client
 	baseURL    string
@@ -58,12 +60,25 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 	}
 
 	for _, metric := range metricsList {
-		log.Infof(
-			"Sending metric: %s %s %v %d", metric.ID, metric.MType, metric.Value, metric.Delta,
-		)
-		err := client.sendMetric(metric)
+		var err error
+		retries := 0
+
+		for retries < maxRetries {
+			log.Infof(
+				"Sending metric: %s %s %v %d", metric.ID, metric.MType, metric.Value, metric.Delta,
+			)
+
+			err = client.sendMetric(metric)
+			if err == nil {
+				break
+			}
+
+			retries++
+			log.Errorf("failed to send metric %s (attempt %d/%d): %v", metric.ID, retries, maxRetries, err)
+		}
+
 		if err != nil {
-			log.Errorf("failed to send metric %s: %v", metric.ID, err)
+			return fmt.Errorf("failed to send metric %s after %d attempts: %w", metric.ID, retries, err)
 		}
 	}
 
