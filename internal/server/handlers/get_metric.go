@@ -44,9 +44,11 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		MType: metricDTO.MType,
 	}
 
-	if metricDTO.MType == domain.Counter {
+	if metricDTO.MType == domain.Counter && metricDTO.Delta.Int64 != 0 {
 		apiResponse.Delta = metricDTO.Delta.Int64
-	} else if metricDTO.MType == domain.Gauge {
+	}
+
+	if metricDTO.MType == domain.Gauge && metricDTO.Value.Float64 != 0 {
 		apiResponse.Value = metricDTO.Value.Float64
 	}
 
