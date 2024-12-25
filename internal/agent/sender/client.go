@@ -58,6 +58,8 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 		{ID: "PauseTotalNs", MType: "gauge", Value: &metrics.PauseTotalNs},
 		{ID: "StackInuse", MType: "gauge", Value: &metrics.StackInuse},
 		{ID: "Sys", MType: "gauge", Value: &metrics.Sys},
+		{ID: "MCacheSys", MType: "gauge", Value: &metrics.MCacheSys},
+		{ID: "StackSys", MType: "gauge", Value: &metrics.StackSys},
 		{ID: "TotalAlloc", MType: "gauge", Value: &metrics.TotalAlloc},
 		{ID: "PollCount", MType: "counter", Delta: &metrics.PollCount},
 		{ID: "RandomValue", MType: "gauge", Value: &metrics.RandomValue},

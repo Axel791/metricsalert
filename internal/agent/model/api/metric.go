@@ -27,6 +27,8 @@ type Metrics struct {
 	Sys           float64 `json:"Sys"`
 	TotalAlloc    float64 `json:"TotalAlloc"`
 	PollCount     int64   `json:"PollCount"`
+	StackSys      float64 `json:"StackSys"`
+	MCacheSys     float64 `json:"MCacheSys"`
 	RandomValue   float64 `json:"RandomValue"`
 }
 

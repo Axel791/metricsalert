@@ -65,6 +65,8 @@ func runAgent(address string, reportInterval, pollInterval time.Duration) {
 				StackInuse:    float64(metric.StackInuse) / 1024,
 				Sys:           float64(metric.Sys) / 1024,
 				TotalAlloc:    float64(metric.TotalAlloc) / 1024,
+				MCacheSys:     float64(metric.MCacheSys) / 1024,
+				StackSys:      float64(metric.StackSys) / 1024,
 				PollCount:     pollCount,
 				RandomValue:   randomValue,
 			}
@@ -81,7 +83,7 @@ func runAgent(address string, reportInterval, pollInterval time.Duration) {
 func main() {
 	log.Infof("agent started")
 
-	startTime := time.Now().Format("2006-01-02 15:04:05") // Форматирование времени
+	startTime := time.Now().Format("2006-01-02 15:04:05")
 
 	log.Infof("Agent started at %s", startTime)
 
