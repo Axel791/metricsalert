@@ -166,7 +166,7 @@ func (client *MetricClient) healthCheck() error {
 		retries++
 
 		if interval < maxInterval {
-			interval *= 2
+			interval += time.Duration(1 / 2)
 			if interval > maxInterval {
 				interval = maxInterval
 			}
