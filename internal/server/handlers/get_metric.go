@@ -21,7 +21,7 @@ func NewGetMetricHandler(metricService services.Metric) *GetMetricHandler {
 }
 
 func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	time.Sleep(2 * time.Second)
+	time.Sleep(1 * time.Second)
 	var input api.GetMetric
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
@@ -29,6 +29,8 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
+
+	log.Infof("input value: %v", input)
 
 	metricDTO, err := h.metricService.GetMetric(input.MType, input.ID)
 	if err != nil {
@@ -47,6 +49,8 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	} else if metricDTO.MType == domain.Gauge {
 		apiResponse.Value = metricDTO.Value.Float64
 	}
+
+	log.Infof("API response: %v", apiResponse)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)

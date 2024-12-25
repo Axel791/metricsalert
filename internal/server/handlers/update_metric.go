@@ -33,6 +33,8 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		value = input.Value
 	}
 
+	log.Infof("input value: %v", input)
+
 	metricDTO, err := h.metricService.CreateOrUpdateMetric(input.MType, input.ID, value)
 	if err != nil {
 		log.Infof("UpdateMetricHandler: failed to update metric: %v", err)
@@ -49,6 +51,8 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	} else if metricDTO.MType == domain.Gauge {
 		response.Value = metricDTO.Value.Float64
 	}
+
+	log.Infof("API response: %v", response)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
