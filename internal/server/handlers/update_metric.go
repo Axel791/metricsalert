@@ -26,14 +26,31 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	log.Infof("input value: %v", input)
+
 	var value interface{}
-	if input.MType == domain.Counter {
-		value = input.Delta
-	} else {
-		value = input.Value
+
+	switch input.MType {
+	case domain.Counter:
+		if input.Delta == nil {
+			http.Error(w, "missing delta value for counter metric", http.StatusBadRequest)
+			return
+		}
+		value = *input.Delta
+
+	case domain.Gauge:
+		if input.Value == nil {
+			http.Error(w, "missing value for gauge metric", http.StatusBadRequest)
+			return
+		}
+		value = *input.Value
+
+	default:
+		http.Error(w, "invalid metric type", http.StatusBadRequest)
+		return
 	}
 
-	log.Infof("input value: %v", input)
+	log.Infof("value: %v", value)
 
 	metricDTO, err := h.metricService.CreateOrUpdateMetric(input.MType, input.ID, value)
 	if err != nil {
@@ -41,19 +58,24 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	// Формируем ответ
 	response := api.Metrics{
 		ID:    metricDTO.ID,
 		MType: metricDTO.MType,
 	}
 
-	if metricDTO.MType == domain.Counter {
+	// Добавляем поле в зависимости от типа метрики
+	switch metricDTO.MType {
+	case domain.Counter:
 		response.Delta = &metricDTO.Delta.Int64
-	} else if metricDTO.MType == domain.Gauge {
+	case domain.Gauge:
 		response.Value = &metricDTO.Value.Float64
 	}
 
 	log.Infof("API response: %v", response)
 
+	// Отправляем ответ
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
