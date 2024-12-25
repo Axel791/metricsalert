@@ -47,24 +47,24 @@ func main() {
 	// Актуальные маршруты
 	router.Method(
 		http.MethodPost,
-		"/update{suffix:/}",
+		"/update/",
 		handlers.NewUpdateMetricHandler(metricsService),
 	)
-	//router.Method(
-	//	http.MethodPost,
-	//	"/update",
-	//	handlers.NewUpdateMetricHandler(metricsService),
-	//)
 	router.Method(
 		http.MethodPost,
-		"/value{suffix:/}",
+		"/update",
+		handlers.NewUpdateMetricHandler(metricsService),
+	)
+	router.Method(
+		http.MethodPost,
+		"/value/",
 		handlers.NewGetMetricHandler(metricsService),
 	)
-	//router.Method(
-	//	http.MethodPost,
-	//	"/value",
-	//	handlers.NewGetMetricHandler(metricsService),
-	//)
+	router.Method(
+		http.MethodPost,
+		"/value",
+		handlers.NewGetMetricHandler(metricsService),
+	)
 	router.Get(
 		"/healthcheck/",
 		handlers.HealthCheckHandler,
