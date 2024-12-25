@@ -47,9 +47,9 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if metricDTO.MType == domain.Counter {
-		response.Delta = metricDTO.Delta.Int64
+		response.Delta = &metricDTO.Delta.Int64
 	} else if metricDTO.MType == domain.Gauge {
-		response.Value = metricDTO.Value.Float64
+		response.Value = &metricDTO.Value.Float64
 	}
 
 	log.Infof("API response: %v", response)
