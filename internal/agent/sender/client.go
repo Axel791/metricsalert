@@ -16,7 +16,7 @@ import (
 
 const (
 	maxRetries  = 5
-	minInterval = 1 * time.Second
+	minInterval = 1 / 2 * time.Second
 	maxInterval = 5 * time.Second
 )
 
