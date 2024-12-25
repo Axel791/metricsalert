@@ -9,6 +9,7 @@ import (
 	"github.com/gojek/heimdall/v7/httpclient"
 	log "github.com/sirupsen/logrus"
 	"io"
+	"math"
 	"net/http"
 	"net/url"
 	"time"
@@ -35,33 +36,33 @@ func NewMetricClient(baseURL string) *MetricClient {
 
 func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 	metricsList := []api.MetricPost{
-		{ID: "Alloc", MType: "gauge", Value: metrics.Alloc},
-		{ID: "BuckHashSys", MType: "gauge", Value: metrics.BuckHashSys},
-		{ID: "Frees", MType: "gauge", Value: metrics.Frees},
-		{ID: "GCCPUFraction", MType: "gauge", Value: metrics.GCCPUFraction},
-		{ID: "GCSys", MType: "gauge", Value: metrics.GCSys},
-		{ID: "HeapAlloc", MType: "gauge", Value: metrics.HeapAlloc},
-		{ID: "HeapIdle", MType: "gauge", Value: metrics.HeapIdle},
-		{ID: "HeapInuse", MType: "gauge", Value: metrics.HeapInuse},
-		{ID: "HeapObjects", MType: "gauge", Value: metrics.HeapObjects},
-		{ID: "HeapReleased", MType: "gauge", Value: metrics.HeapReleased},
-		{ID: "HeapSys", MType: "gauge", Value: metrics.HeapSys},
-		{ID: "LastGC", MType: "gauge", Value: metrics.LastGC},
-		{ID: "Lookups", MType: "gauge", Value: metrics.Lookups},
-		{ID: "MCacheInuse", MType: "gauge", Value: metrics.MCacheInuse},
-		{ID: "MSpanInuse", MType: "gauge", Value: metrics.MSpanInuse},
-		{ID: "MSpanSys", MType: "gauge", Value: metrics.MSpanSys},
-		{ID: "Mallocs", MType: "gauge", Value: metrics.Mallocs},
-		{ID: "NextGC", MType: "gauge", Value: metrics.NextGC},
-		{ID: "NumGC", MType: "gauge", Value: metrics.NumGC},
-		{ID: "NumForcedGC", MType: "gauge", Value: metrics.NumForcedGC},
-		{ID: "OtherSys", MType: "gauge", Value: metrics.OtherSys},
-		{ID: "PauseTotalNs", MType: "gauge", Value: metrics.PauseTotalNs},
-		{ID: "StackInuse", MType: "gauge", Value: metrics.StackInuse},
-		{ID: "Sys", MType: "gauge", Value: metrics.Sys},
-		{ID: "TotalAlloc", MType: "gauge", Value: metrics.TotalAlloc},
+		{ID: "Alloc", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.Alloc)},
+		{ID: "BuckHashSys", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.BuckHashSys)},
+		{ID: "Frees", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.Frees)},
+		{ID: "GCCPUFraction", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.GCCPUFraction)},
+		{ID: "GCSys", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.GCSys)},
+		{ID: "HeapAlloc", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.HeapAlloc)},
+		{ID: "HeapIdle", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.HeapIdle)},
+		{ID: "HeapInuse", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.HeapInuse)},
+		{ID: "HeapObjects", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.HeapObjects)},
+		{ID: "HeapReleased", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.HeapReleased)},
+		{ID: "HeapSys", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.HeapSys)},
+		{ID: "LastGC", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.LastGC)},
+		{ID: "Lookups", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.Lookups)},
+		{ID: "MCacheInuse", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.MCacheInuse)},
+		{ID: "MSpanInuse", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.MSpanInuse)},
+		{ID: "MSpanSys", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.MSpanSys)},
+		{ID: "Mallocs", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.Mallocs)},
+		{ID: "NextGC", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.NextGC)},
+		{ID: "NumGC", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.NumGC)},
+		{ID: "NumForcedGC", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.NumForcedGC)},
+		{ID: "OtherSys", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.OtherSys)},
+		{ID: "PauseTotalNs", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.PauseTotalNs)},
+		{ID: "StackInuse", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.StackInuse)},
+		{ID: "Sys", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.Sys)},
+		{ID: "TotalAlloc", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.TotalAlloc)},
 		{ID: "PollCount", MType: "counter", Delta: metrics.PollCount},
-		{ID: "RandomValue", MType: "gauge", Value: metrics.RandomValue},
+		{ID: "RandomValue", MType: "gauge", Value: roundToSixDecimalPlaces(metrics.RandomValue)},
 	}
 
 	if err := client.healthCheck(); err != nil {
@@ -176,4 +177,8 @@ func (client *MetricClient) healthCheck() error {
 	}
 
 	return fmt.Errorf("health check failed after %d attempts", retries)
+}
+
+func roundToSixDecimalPlaces(value float64) float64 {
+	return math.Round(value*1e6) / 1e6
 }
