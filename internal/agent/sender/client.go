@@ -153,10 +153,14 @@ func (client *MetricClient) healthCheck() error {
 		rsp, err := client.httpClient.Do(req)
 		if err != nil {
 			log.Infof("failed to send healthcheck request (attempt %d/%d): %v", retries+1, maxRetries, err)
-		} else if rsp.StatusCode == http.StatusOK {
-			return nil
 		} else {
-			log.Infof("unexpected status code during health check: %d (attempt %d/%d)", rsp.StatusCode, retries+1, maxRetries)
+			defer rsp.Body.Close()
+
+			if rsp.StatusCode == http.StatusOK {
+				return nil
+			} else {
+				log.Infof("unexpected status code during health check: %d (attempt %d/%d)", rsp.StatusCode, retries+1, maxRetries)
+			}
 		}
 
 		retries++
