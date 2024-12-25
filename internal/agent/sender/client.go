@@ -11,9 +11,14 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"time"
 )
 
-const maxRetries = 5
+const (
+	maxRetries  = 5
+	minInterval = 1 * time.Second
+	maxInterval = 5 * time.Second
+)
 
 type MetricClient struct {
 	httpClient *httpclient.Client
@@ -59,26 +64,17 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 		{ID: "RandomValue", MType: "gauge", Value: metrics.RandomValue},
 	}
 
+	if err := client.healthCheck(); err != nil {
+		return fmt.Errorf("health check failed: %w", err)
+	}
+
 	for _, metric := range metricsList {
-		var err error
-		retries := 0
-
-		for retries < maxRetries {
-			log.Infof(
-				"Sending metric: %s %s %v %d", metric.ID, metric.MType, metric.Value, metric.Delta,
-			)
-
-			err = client.sendMetric(metric)
-			if err == nil {
-				break
-			}
-
-			retries++
-			log.Errorf("failed to send metric %s (attempt %d/%d): %v", metric.ID, retries, maxRetries, err)
-		}
-
+		log.Infof(
+			"Sending metric: %s %s %v %d", metric.ID, metric.MType, metric.Value, metric.Delta,
+		)
+		err := client.sendMetric(metric)
 		if err != nil {
-			return fmt.Errorf("failed to send metric %s after %d attempts: %w", metric.ID, retries, err)
+			log.Errorf("failed to send metric %s: %v", metric.ID, err)
 		}
 	}
 
@@ -139,7 +135,7 @@ func (client *MetricClient) sendMetric(metric api.MetricPost) error {
 	return nil
 }
 
-func (client *MetricClient) HealthCheck() error {
+func (client *MetricClient) healthCheck() error {
 	u, err := url.Parse(fmt.Sprintf("%s/healthcheck/", client.baseURL))
 	if err != nil {
 		return fmt.Errorf("failed to parse URL: %w", err)
@@ -150,25 +146,30 @@ func (client *MetricClient) HealthCheck() error {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
 
-	rsp, err := client.httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("failed to send healthcheck request: %w", err)
-	}
-	defer rsp.Body.Close()
+	retries := 0
+	interval := minInterval
 
-	if rsp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", rsp.StatusCode)
+	for retries < maxRetries {
+		rsp, err := client.httpClient.Do(req)
+		if err != nil {
+			log.Infof("failed to send healthcheck request (attempt %d/%d): %v", retries+1, maxRetries, err)
+		} else if rsp.StatusCode == http.StatusOK {
+			return nil
+		} else {
+			log.Infof("unexpected status code during health check: %d (attempt %d/%d)", rsp.StatusCode, retries+1, maxRetries)
+		}
+
+		retries++
+
+		if interval < maxInterval {
+			interval *= 2
+			if interval > maxInterval {
+				interval = maxInterval
+			}
+		}
+
+		time.Sleep(interval)
 	}
 
-	var response map[string]interface{}
-	if err := json.NewDecoder(rsp.Body).Decode(&response); err != nil {
-		return fmt.Errorf("failed to decode healthcheck response: %w", err)
-	}
-
-	status, ok := response["status"].(string)
-	if !ok || status != "true" {
-		return fmt.Errorf("unexpected healthcheck response: %v", response)
-	}
-
-	return nil
+	return fmt.Errorf("health check failed after %d attempts", retries)
 }

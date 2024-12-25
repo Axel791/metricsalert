@@ -11,7 +11,3 @@ type GetMetric struct {
 	ID    string `json:"id"`
 	MType string `json:"type"`
 }
-
-type HealthCheckResponse struct {
-	Status string `json:"status"`
-}
