@@ -9,6 +9,7 @@ import (
 
 func GzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Проверяем Content-Encoding заголовок и разархивируем тело, если gzip
 		if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
 			gzipReader, err := gzip.NewReader(r.Body)
 			if err != nil {
@@ -19,7 +20,21 @@ func GzipMiddleware(next http.Handler) http.Handler {
 			r.Body = io.NopCloser(gzipReader)
 		}
 
-		next.ServeHTTP(w, r)
+		// Проверяем Accept-Encoding: gzip в заголовках
+		if strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
+			gzipWriter := gzip.NewWriter(w)
+			defer gzipWriter.Close()
+
+			w.Header().Set("Content-Encoding", "gzip")
+			w.Header().Set("Vary", "Accept-Encoding")
+			next.ServeHTTP(&gzipResponseWriter{
+				ResponseWriter: w,
+				Writer:         gzipWriter,
+			}, r)
+		} else {
+			// Если gzip не запрошен, продолжаем без сжатия
+			next.ServeHTTP(w, r)
+		}
 	})
 }
 
