@@ -6,9 +6,10 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/Axel791/metricsalert/internal/server/model/domain"
 	"github.com/Axel791/metricsalert/internal/server/repositories"
-	"github.com/go-chi/chi/v5"
 )
 
 type GetMetricHandler struct {

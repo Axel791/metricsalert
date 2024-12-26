@@ -1,8 +1,9 @@
 package mocks
 
 import (
-	"github.com/Axel791/metricsalert/internal/agent/model/api"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/Axel791/metricsalert/internal/agent/model/api"
 )
 
 type MockMetricClient struct {
