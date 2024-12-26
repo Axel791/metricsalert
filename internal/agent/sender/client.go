@@ -5,12 +5,13 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"github.com/Axel791/metricsalert/internal/agent/model/api"
-	"github.com/gojek/heimdall/v7/httpclient"
-	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/url"
 	"time"
+
+	"github.com/Axel791/metricsalert/internal/agent/model/api"
+	"github.com/gojek/heimdall/v7/httpclient"
+	log "github.com/sirupsen/logrus"
 )
 
 const (

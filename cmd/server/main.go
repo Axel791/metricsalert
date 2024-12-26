@@ -2,10 +2,11 @@ package main
 
 import (
 	"context"
-	"github.com/Axel791/metricsalert/internal/server/handlers/deprecated"
-	"github.com/go-chi/chi/v5/middleware"
 	"net/http"
 	"time"
+
+	"github.com/Axel791/metricsalert/internal/server/handlers/deprecated"
+	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/Axel791/metricsalert/internal/server/config"
 	"github.com/Axel791/metricsalert/internal/server/handlers"
