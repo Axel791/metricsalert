@@ -21,7 +21,6 @@ func GzipMiddleware(next http.Handler) http.Handler {
 		}
 
 		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
-			// Если клиент не поддерживает gzip, то просто вызываем следующий обработчик без обёртки.
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -29,7 +28,6 @@ func GzipMiddleware(next http.Handler) http.Handler {
 		gzrw := newGzipResponseWriter(w)
 		defer gzrw.Close()
 
-		// Передаём наш "прокси" в следующий обработчик
 		next.ServeHTTP(gzrw, r)
 	})
 }
@@ -75,8 +73,6 @@ func (g *gzipResponseWriter) Write(b []byte) (int, error) {
 	if g.gzipStarted {
 		return g.gzWriter.Write(b)
 	}
-	// Если Content-Type не попал под нужные типы,
-	// то пишем «как есть» в исходный ResponseWriter.
 	return g.ResponseWriter.Write(b)
 }
 
