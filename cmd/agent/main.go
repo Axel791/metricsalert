@@ -5,12 +5,13 @@ import (
 	"sync/atomic"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/Axel791/metricsalert/internal/agent/collector"
 	"github.com/Axel791/metricsalert/internal/agent/config"
 	"github.com/Axel791/metricsalert/internal/agent/model/api"
 	"github.com/Axel791/metricsalert/internal/agent/sender"
 	"github.com/Axel791/metricsalert/internal/shared/validatiors"
-	log "github.com/sirupsen/logrus"
 )
 
 func runAgent(address string, reportInterval, pollInterval time.Duration) {
