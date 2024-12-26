@@ -9,7 +9,6 @@ import (
 // GzipMiddleware обрабатывает gzip на входе и выходе.
 func GzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		if strings.EqualFold(r.Header.Get("Content-Encoding"), "gzip") {
 			gz, err := gzip.NewReader(r.Body)
 			if err != nil {

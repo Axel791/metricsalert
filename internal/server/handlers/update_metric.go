@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/Axel791/metricsalert/internal/server/model/api"
 	"github.com/Axel791/metricsalert/internal/server/model/domain"
 	"github.com/Axel791/metricsalert/internal/server/services"
-	log "github.com/sirupsen/logrus"
 )
 
 type UpdateMetricHandler struct {

@@ -1,8 +1,9 @@
 package mocks
 
 import (
-	"github.com/Axel791/metricsalert/internal/server/model/domain"
 	"github.com/stretchr/testify/mock"
+
+	"github.com/Axel791/metricsalert/internal/server/model/domain"
 )
 
 type MockStore struct {

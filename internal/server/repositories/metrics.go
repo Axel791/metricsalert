@@ -1,8 +1,9 @@
 package repositories
 
 import (
-	"github.com/Axel791/metricsalert/internal/server/model/domain"
 	"gopkg.in/guregu/null.v4"
+
+	"github.com/Axel791/metricsalert/internal/server/model/domain"
 )
 
 type MetricRepository struct {

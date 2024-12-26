@@ -90,7 +90,6 @@ func (client *MetricClient) sendMetric(metric api.MetricPost) error {
 	}
 
 	compressedBody, err := compressData(body)
-
 	if err != nil {
 		return fmt.Errorf("failed to compress data: %w", err)
 	}
