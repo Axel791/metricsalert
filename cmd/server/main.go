@@ -40,21 +40,11 @@ func main() {
 	metricsService := services.NewMetricsService(storage)
 
 	// Актуальные маршруты
-	//router.Method(
-	//	http.MethodPost,
-	//	"/update/",
-	//	handlers.NewUpdateMetricHandler(metricsService),
-	//)
 	router.Method(
 		http.MethodPost,
 		"/update",
 		handlers.NewUpdateMetricHandler(metricsService),
 	)
-	//router.Method(
-	//	http.MethodPost,
-	//	"/value/",
-	//	handlers.NewGetMetricHandler(metricsService),
-	//)
 	router.Method(
 		http.MethodPost,
 		"/value",

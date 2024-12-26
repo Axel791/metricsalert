@@ -2,6 +2,7 @@ package sender
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"github.com/Axel791/metricsalert/internal/agent/model/api"
@@ -82,25 +83,31 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 }
 
 func (client *MetricClient) sendMetric(metric api.MetricPost) error {
-	headers := http.Header{}
-	headers.Set("Content-Type", "application/json")
-
 	body, err := json.Marshal(metric)
 	if err != nil {
 		return fmt.Errorf("failed to marshal metric: %w", err)
 	}
+
+	compressedBody, err := compressData(body)
+	if err != nil {
+		return fmt.Errorf("failed to compress data: %w", err)
+	}
+
+	headers := http.Header{}
+	headers.Set("Content-Type", "application/json")
+	headers.Set("Content-Encoding", "gzip")
 
 	u, err := url.Parse(fmt.Sprintf("%s/update", client.baseURL))
 	if err != nil {
 		return fmt.Errorf("failed to parse URL: %w", err)
 	}
 
-	rsp, err := client.httpClient.Post(u.String(), bytes.NewBuffer(body), headers)
+	rsp, err := client.httpClient.Post(u.String(), bytes.NewBuffer(compressedBody), headers)
 	if err != nil {
 		return fmt.Errorf("failed to send metrics %s: %w", metric.ID, err)
 	}
-
 	defer rsp.Body.Close()
+
 	if rsp.StatusCode != http.StatusOK {
 		return fmt.Errorf("unexpected status code: %d", rsp.StatusCode)
 	}
@@ -149,4 +156,17 @@ func (client *MetricClient) healthCheck() error {
 	}
 
 	return fmt.Errorf("health check failed after %d attempts", retries)
+}
+
+// compressData сжимает переданные байты с помощью gzip и возвращает сжатые данные.
+func compressData(data []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	gz := gzip.NewWriter(&buf)
+	defer gz.Close()
+
+	if _, err := gz.Write(data); err != nil {
+		return nil, fmt.Errorf("failed to write to gzip writer: %w", err)
+	}
+
+	return buf.Bytes(), nil
 }

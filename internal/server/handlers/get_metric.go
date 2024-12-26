@@ -27,8 +27,6 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infof("Received input: %v", input)
-
 	metricDTO, err := h.metricService.GetMetric(input.MType, input.ID)
 	if err != nil {
 		log.Printf("Error getting metric: %v", err)
@@ -36,22 +34,16 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Infof("Got metric: %v", metricDTO)
-
 	apiResponse := api.Metrics{
 		ID:    metricDTO.ID,
 		MType: metricDTO.MType,
 	}
 
-	// Присваиваем значение Delta для Counter
 	if metricDTO.MType == domain.Counter && metricDTO.Delta.Int64 != 0 {
-		log.Infof("Delta metric: %v", metricDTO.Delta)
 		apiResponse.Delta = &metricDTO.Delta.Int64
 	}
 
-	// Присваиваем значение Value для Gauge
 	if metricDTO.MType == domain.Gauge {
-		// Присваиваем значение, а не указатель
 		apiResponse.Value = &metricDTO.Value.Float64
 	}
 
