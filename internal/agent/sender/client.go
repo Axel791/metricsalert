@@ -9,9 +9,10 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/Axel791/metricsalert/internal/agent/model/api"
 	"github.com/gojek/heimdall/v7/httpclient"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/Axel791/metricsalert/internal/agent/model/api"
 )
 
 const (
