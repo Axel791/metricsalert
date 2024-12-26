@@ -2,6 +2,7 @@ package sender
 
 import (
 	"bytes"
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"github.com/Axel791/metricsalert/internal/agent/model/api"
@@ -85,18 +86,33 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 func (client *MetricClient) sendMetric(metric api.MetricPost) error {
 	headers := http.Header{}
 	headers.Set("Content-Type", "application/json")
+	headers.Set("Content-Encoding", "gzip")
 
 	body, err := json.Marshal(metric)
 	if err != nil {
 		return fmt.Errorf("failed to marshal metric: %w", err)
 	}
 
+	var buf bytes.Buffer
+	gzipWriter := gzip.NewWriter(&buf)
+	_, err = gzipWriter.Write(body)
+	if err != nil {
+		return fmt.Errorf("failed to compress metric: %w", err)
+	}
+	gzipWriter.Close()
+
 	u, err := url.Parse(fmt.Sprintf("%s/update", client.baseURL))
 	if err != nil {
 		return fmt.Errorf("failed to parse URL: %w", err)
 	}
 
-	rsp, err := client.httpClient.Post(u.String(), bytes.NewBuffer(body), headers)
+	req, err := http.NewRequest(http.MethodPost, u.String(), &buf)
+	if err != nil {
+		return fmt.Errorf("failed to create request: %w", err)
+	}
+	req.Header = headers
+
+	rsp, err := client.httpClient.Do(req)
 	if err != nil {
 		return fmt.Errorf("failed to send metrics %s: %w", metric.ID, err)
 	}

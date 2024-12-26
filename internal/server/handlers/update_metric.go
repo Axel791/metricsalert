@@ -59,13 +59,11 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	// Формируем ответ
 	response := api.Metrics{
 		ID:    metricDTO.ID,
 		MType: metricDTO.MType,
 	}
 
-	// Добавляем поле в зависимости от типа метрики
 	switch metricDTO.MType {
 	case domain.Counter:
 		response.Delta = &metricDTO.Delta.Int64

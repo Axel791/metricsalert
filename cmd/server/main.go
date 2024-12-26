@@ -39,7 +39,7 @@ func main() {
 	router := chi.NewRouter()
 
 	router.Use(middleware.WithLogging)
-	//router.Use(middleware.GzipMiddleware)
+	router.Use(middleware.GzipMiddleware)
 
 	storage := repositories.NewMetricRepository()
 	metricsService := services.NewMetricsService(storage)
@@ -86,7 +86,7 @@ func main() {
 		"/value/{metricType}/{name}",
 		deprecated.NewGetMetricHandler(storage),
 	)
-	startTime := time.Now().Format("2006-01-02 15:04:05") // Форматирование времени
+	startTime := time.Now().Format("2006-01-02 15:04:05")
 
 	log.Infof("Server started at %s", startTime)
 
