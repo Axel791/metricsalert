@@ -64,6 +64,7 @@ func (h *GetMetricsHTMLHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusOK)
 	if err := tmpl.Execute(w, metricsMap); err != nil {
 		http.Error(w, "Ошибка при генерации страницы", http.StatusInternalServerError)
 		return
