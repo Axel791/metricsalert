@@ -34,6 +34,7 @@ func main() {
 	router := chi.NewRouter()
 
 	router.Use(serverMiddleware.WithLogging)
+	router.Use(serverMiddleware.GzipMiddleware)
 	router.Use(middleware.StripSlashes)
 
 	storage := repositories.NewMetricRepository()
