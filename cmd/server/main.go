@@ -61,7 +61,7 @@ func main() {
 		handlers.NewGetMetricHandler(metricsService),
 	)
 	router.Get(
-		"/healthcheck/",
+		"/healthcheck",
 		handlers.HealthCheckHandler,
 	)
 	router.Method(

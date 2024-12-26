@@ -109,7 +109,7 @@ func (client *MetricClient) sendMetric(metric api.MetricPost) error {
 }
 
 func (client *MetricClient) healthCheck() error {
-	u, err := url.Parse(fmt.Sprintf("%s/healthcheck/", client.baseURL))
+	u, err := url.Parse(fmt.Sprintf("%s/healthcheck", client.baseURL))
 	if err != nil {
 		return fmt.Errorf("failed to parse URL: %w", err)
 	}
