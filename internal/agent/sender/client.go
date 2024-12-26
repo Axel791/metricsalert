@@ -89,6 +89,7 @@ func (client *MetricClient) sendMetric(metric api.MetricPost) error {
 	}
 
 	compressedBody, err := compressData(body)
+
 	if err != nil {
 		return fmt.Errorf("failed to compress data: %w", err)
 	}
@@ -158,14 +159,15 @@ func (client *MetricClient) healthCheck() error {
 	return fmt.Errorf("health check failed after %d attempts", retries)
 }
 
-// compressData сжимает переданные байты с помощью gzip и возвращает сжатые данные.
 func compressData(data []byte) ([]byte, error) {
 	var buf bytes.Buffer
 	gz := gzip.NewWriter(&buf)
-	defer gz.Close()
 
 	if _, err := gz.Write(data); err != nil {
 		return nil, fmt.Errorf("failed to write to gzip writer: %w", err)
+	}
+	if err := gz.Close(); err != nil {
+		return nil, fmt.Errorf("failed to close gzip writer: %w", err)
 	}
 
 	return buf.Bytes(), nil
