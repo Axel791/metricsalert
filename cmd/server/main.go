@@ -39,7 +39,6 @@ func main() {
 	router := chi.NewRouter()
 
 	router.Use(middleware.WithLogging)
-	router.Use(middleware.GzipMiddleware)
 
 	storage := repositories.NewMetricRepository()
 	metricsService := services.NewMetricsService(storage)
@@ -48,22 +47,22 @@ func main() {
 	router.Method(
 		http.MethodPost,
 		"/update/",
-		handlers.NewUpdateMetricHandler(metricsService),
+		middleware.GzipMiddleware(handlers.NewUpdateMetricHandler(metricsService)),
 	)
 	router.Method(
 		http.MethodPost,
 		"/update",
-		handlers.NewUpdateMetricHandler(metricsService),
+		middleware.GzipMiddleware(handlers.NewUpdateMetricHandler(metricsService)),
 	)
 	router.Method(
 		http.MethodPost,
 		"/value/",
-		handlers.NewGetMetricHandler(metricsService),
+		middleware.GzipMiddleware(handlers.NewGetMetricHandler(metricsService)),
 	)
 	router.Method(
 		http.MethodPost,
 		"/value",
-		handlers.NewGetMetricHandler(metricsService),
+		middleware.GzipMiddleware(handlers.NewGetMetricHandler(metricsService)),
 	)
 	router.Get(
 		"/healthcheck/",
