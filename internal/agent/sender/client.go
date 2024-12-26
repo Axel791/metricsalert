@@ -140,15 +140,14 @@ func (client *MetricClient) healthCheck() error {
 
 			if rsp.StatusCode == http.StatusOK {
 				return nil
-			} else {
-				log.Infof("unexpected status code during health check: %d (attempt %d/%d)", rsp.StatusCode, retries+1, maxRetries)
 			}
+			log.Infof("unexpected status code during health check: %d (attempt %d/%d)", rsp.StatusCode, retries+1, maxRetries)
 		}
 
 		retries++
 
 		if interval < maxInterval {
-			interval += time.Duration(1 / 2)
+			interval += time.Duration(0.5 * float64(time.Second))
 			if interval > maxInterval {
 				interval = maxInterval
 			}

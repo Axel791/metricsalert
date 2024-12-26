@@ -28,7 +28,7 @@ func runAgent(address string, reportInterval, pollInterval time.Duration) {
 
 	var metricsDTO api.Metrics
 
-	var pollCount int64 = 0
+	var pollCount int64
 
 	for {
 		select {
