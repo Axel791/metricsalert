@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"github.com/Axel791/metricsalert/internal/server/handlers/deprecated"
 	"github.com/go-chi/chi/v5/middleware"
 	"net/http"
+	"time"
 
 	"github.com/Axel791/metricsalert/internal/server/config"
 	"github.com/Axel791/metricsalert/internal/server/handlers"
@@ -25,7 +27,7 @@ func main() {
 		log.Fatalf("error loading config: %v", err)
 	}
 
-	addr := config.ParseFlags(cfg)
+	addr, storeIntervalFlag, filePathFlag, restoreFlag := config.ParseFlags(cfg)
 
 	if !validatiors.IsValidAddress(addr, false) {
 		log.Fatalf("invalid address: %s\n", addr)
@@ -38,7 +40,17 @@ func main() {
 	router.Use(middleware.StripSlashes)
 
 	storage := repositories.NewMetricRepository()
+	fileService := services.NewFileStorageService(storage, filePathFlag, time.Duration(storeIntervalFlag))
 	metricsService := services.NewMetricsService(storage)
+
+	if restoreFlag {
+		if err := fileService.Load(); err != nil {
+			log.Warn("Load failed, maybe file doesn't exist?")
+		}
+	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	fileService.StartAutoSave(ctx)
 
 	// Актуальные маршруты
 	router.Method(
@@ -74,6 +86,12 @@ func main() {
 	)
 	log.Infof("server started on %s", addr)
 	err = http.ListenAndServe(addr, router)
+
+	cancel()
+
+	if err := fileService.Save(); err != nil {
+		log.Errorf("Failed to save on shutdown: %v", err)
+	}
 
 	if err != nil {
 		log.Fatalf("error starting server: %v", err)
