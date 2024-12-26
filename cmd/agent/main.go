@@ -83,10 +83,6 @@ func runAgent(address string, reportInterval, pollInterval time.Duration) {
 func main() {
 	log.Infof("agent started")
 
-	startTime := time.Now().Format("2006-01-02 15:04:05")
-
-	log.Infof("Agent started at %s", startTime)
-
 	cfg, err := config.AgentLoadConfig()
 	if err != nil {
 		log.Fatalf("error loading config: %v\n", err)

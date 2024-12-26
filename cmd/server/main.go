@@ -1,10 +1,8 @@
 package main
 
 import (
-	"net/http"
-	"time"
-
 	"github.com/Axel791/metricsalert/internal/server/handlers/deprecated"
+	"net/http"
 
 	"github.com/Axel791/metricsalert/internal/server/config"
 	"github.com/Axel791/metricsalert/internal/server/handlers"
@@ -20,10 +18,6 @@ import (
 
 func main() {
 	logger.InitLogger()
-
-	startTimeMain := time.Now().Format("2006-01-02 15:04:05")
-
-	log.Infof("Server main started at %s", startTimeMain)
 
 	cfg, err := config.ServerLoadConfig()
 	if err != nil {
@@ -47,22 +41,22 @@ func main() {
 	router.Method(
 		http.MethodPost,
 		"/update/",
-		middleware.GzipMiddleware(handlers.NewUpdateMetricHandler(metricsService)),
+		handlers.NewUpdateMetricHandler(metricsService),
 	)
 	router.Method(
 		http.MethodPost,
 		"/update",
-		middleware.GzipMiddleware(handlers.NewUpdateMetricHandler(metricsService)),
+		handlers.NewUpdateMetricHandler(metricsService),
 	)
 	router.Method(
 		http.MethodPost,
 		"/value/",
-		middleware.GzipMiddleware(handlers.NewGetMetricHandler(metricsService)),
+		handlers.NewGetMetricHandler(metricsService),
 	)
 	router.Method(
 		http.MethodPost,
 		"/value",
-		middleware.GzipMiddleware(handlers.NewGetMetricHandler(metricsService)),
+		handlers.NewGetMetricHandler(metricsService),
 	)
 	router.Get(
 		"/healthcheck/",
@@ -85,10 +79,6 @@ func main() {
 		"/value/{metricType}/{name}",
 		deprecated.NewGetMetricHandler(storage),
 	)
-	startTime := time.Now().Format("2006-01-02 15:04:05")
-
-	log.Infof("Server started at %s", startTime)
-
 	log.Infof("server started on %s", addr)
 	err = http.ListenAndServe(addr, router)
 
