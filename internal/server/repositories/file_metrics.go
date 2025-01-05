@@ -5,8 +5,9 @@ import (
 	"os"
 	"sync"
 
-	"github.com/Axel791/metricsalert/internal/server/model/domain"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/Axel791/metricsalert/internal/server/model/domain"
 )
 
 type FileStoreHandler struct {
