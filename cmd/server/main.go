@@ -46,7 +46,9 @@ func main() {
 	router.Use(middleware.StripSlashes)
 
 	storage := repositories.NewMetricRepository()
-	fileService := services.NewFileStorageService(storage, filePathFlag, time.Duration(storeIntervalFlag))
+	fileStorage := repositories.NewFileStore(storage, filePathFlag)
+
+	fileService := services.NewFileStorageService(fileStorage, time.Duration(storeIntervalFlag))
 	metricsService := services.NewMetricsService(storage)
 
 	if restoreFlag {
