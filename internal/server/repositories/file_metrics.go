@@ -2,10 +2,11 @@ package repositories
 
 import (
 	"encoding/json"
-	"github.com/Axel791/metricsalert/internal/server/model/domain"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"sync"
+
+	"github.com/Axel791/metricsalert/internal/server/model/domain"
+	log "github.com/sirupsen/logrus"
 )
 
 type FileStoreHandler struct {
