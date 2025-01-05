@@ -13,16 +13,20 @@ import (
 
 type UpdateMetricHandler struct {
 	metricService services.Metric
+	logger        *log.Logger
 }
 
-func NewUpdateMetricHandler(metricService services.Metric) *UpdateMetricHandler {
-	return &UpdateMetricHandler{metricService: metricService}
+func NewUpdateMetricHandler(metricService services.Metric, logger *log.Logger) *UpdateMetricHandler {
+	return &UpdateMetricHandler{
+		metricService: metricService,
+		logger:        logger,
+	}
 }
 
 func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var input api.Metrics
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		log.Infof("UpdateMetricHandler: failed to decode request body: %v", err)
+		h.logger.Infof("UpdateMetricHandler: failed to decode request body: %v", err)
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
@@ -51,7 +55,7 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	metricDTO, err := h.metricService.CreateOrUpdateMetric(input.MType, input.ID, value)
 	if err != nil {
-		log.Infof("UpdateMetricHandler: failed to update metric: %v", err)
+		h.logger.Infof("UpdateMetricHandler: failed to update metric: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
@@ -71,7 +75,7 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		log.Printf("UpdateMetricHandler: failed to encode response: %v", err)
+		h.logger.Printf("UpdateMetricHandler: failed to encode response: %v", err)
 		http.Error(w, "failed to encode response", http.StatusInternalServerError)
 	}
 }

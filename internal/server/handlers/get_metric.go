@@ -13,24 +13,28 @@ import (
 
 type GetMetricHandler struct {
 	metricService services.Metric
+	logger        *log.Logger
 }
 
-func NewGetMetricHandler(metricService services.Metric) *GetMetricHandler {
-	return &GetMetricHandler{metricService: metricService}
+func NewGetMetricHandler(metricService services.Metric, logger *log.Logger) *GetMetricHandler {
+	return &GetMetricHandler{
+		metricService: metricService,
+		logger:        logger,
+	}
 }
 
 func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	var input api.GetMetric
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
-		log.Infof("failed to decode request body: %v", err)
+		h.logger.Infof("failed to decode request body: %v", err)
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
 
 	metricDTO, err := h.metricService.GetMetric(input.MType, input.ID)
 	if err != nil {
-		log.Printf("Error getting metric: %v", err)
+		h.logger.Infof("Error getting metric: %v", err)
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return
 	}
@@ -51,8 +55,9 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(apiResponse); err != nil {
-		log.Printf("Error encoding response: %v", err)
-		http.Error(w, "failed to encode response", http.StatusInternalServerError)
+		h.logger.Infof("Error encoding response: %v", err)
+		errorText := http.StatusText(http.StatusInternalServerError)
+		http.Error(w, errorText, http.StatusInternalServerError)
 		return
 	}
 }

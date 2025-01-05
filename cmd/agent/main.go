@@ -5,24 +5,24 @@ import (
 	"sync/atomic"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 
 	"github.com/Axel791/metricsalert/internal/agent/collector"
 	"github.com/Axel791/metricsalert/internal/agent/config"
 	"github.com/Axel791/metricsalert/internal/agent/model/api"
 	"github.com/Axel791/metricsalert/internal/agent/sender"
-	"github.com/Axel791/metricsalert/internal/shared/validatiors"
+	"github.com/Axel791/metricsalert/internal/shared/validators"
 )
 
-func runAgent(address string, reportInterval, pollInterval time.Duration) {
-	if !validatiors.IsValidAddress(address, true) {
+func runAgent(address string, reportInterval, pollInterval time.Duration, log *logrus.Logger) {
+	if !validators.IsValidAddress(address, true) {
 		log.Fatalf("invalid address: %s\n", address)
 	}
 
 	tickerCollector := time.NewTicker(pollInterval)
 	tickerSender := time.NewTicker(reportInterval)
 
-	metricClient := sender.NewMetricClient(address)
+	metricClient := sender.NewMetricClient(address, log)
 
 	defer tickerCollector.Stop()
 	defer tickerSender.Stop()
@@ -82,6 +82,13 @@ func runAgent(address string, reportInterval, pollInterval time.Duration) {
 }
 
 func main() {
+	log := logrus.New()
+	log.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: "2006-01-02 15:04:05",
+	})
+	log.SetLevel(logrus.InfoLevel)
+
 	log.Infof("agent started")
 
 	cfg, err := config.AgentLoadConfig()
@@ -91,5 +98,5 @@ func main() {
 
 	address, reportInterval, pollInterval := config.ParseFlags(cfg)
 
-	runAgent(address, reportInterval, pollInterval)
+	runAgent(address, reportInterval, pollInterval, log)
 }

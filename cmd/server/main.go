@@ -14,15 +14,19 @@ import (
 	serverMiddleware "github.com/Axel791/metricsalert/internal/server/middleware"
 	"github.com/Axel791/metricsalert/internal/server/repositories"
 	"github.com/Axel791/metricsalert/internal/server/services"
-	"github.com/Axel791/metricsalert/internal/shared/logger"
-	"github.com/Axel791/metricsalert/internal/shared/validatiors"
+	"github.com/Axel791/metricsalert/internal/shared/validators"
 
 	"github.com/go-chi/chi/v5"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	logger.InitLogger()
+	log := logrus.New()
+	log.SetFormatter(&logrus.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: "2006-01-02 15:04:05",
+	})
+	log.SetLevel(logrus.InfoLevel)
 
 	cfg, err := config.ServerLoadConfig()
 	if err != nil {
@@ -31,7 +35,7 @@ func main() {
 
 	addr, storeIntervalFlag, filePathFlag, restoreFlag := config.ParseFlags(cfg)
 
-	if !validatiors.IsValidAddress(addr, false) {
+	if !validators.IsValidAddress(addr, false) {
 		log.Fatalf("invalid address: %s\n", addr)
 	}
 
@@ -58,12 +62,12 @@ func main() {
 	router.Method(
 		http.MethodPost,
 		"/update",
-		handlers.NewUpdateMetricHandler(metricsService),
+		handlers.NewUpdateMetricHandler(metricsService, log),
 	)
 	router.Method(
 		http.MethodPost,
 		"/value",
-		handlers.NewGetMetricHandler(metricsService),
+		handlers.NewGetMetricHandler(metricsService, log),
 	)
 	router.Get(
 		"/healthcheck",

@@ -23,14 +23,16 @@ const (
 
 type MetricClient struct {
 	httpClient *httpclient.Client
+	logger     *log.Logger
 	baseURL    string
 }
 
-func NewMetricClient(baseURL string) *MetricClient {
+func NewMetricClient(baseURL string, logger *log.Logger) *MetricClient {
 	client := httpclient.NewClient()
 	return &MetricClient{
 		httpClient: client,
 		baseURL:    baseURL,
+		logger:     logger,
 	}
 }
 
@@ -72,7 +74,7 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 	}
 
 	for _, metric := range metricsList {
-		log.Infof(
+		client.logger.Infof(
 			"Sending metric: %s %s %v %d", metric.ID, metric.MType, metric.Value, metric.Delta,
 		)
 		err := client.sendMetric(metric)
