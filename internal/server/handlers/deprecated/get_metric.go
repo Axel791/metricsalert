@@ -73,7 +73,7 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	_, err := w.Write([]byte(valueStr))
 	if err != nil {
 		log.Printf(
-			"GetMetricHandler: failed to return response for metric %s (type: %s): %v", name, metricType, err,
+			"GetMetricHandler: invalid metric %s (type: %s): %v", name, metricType, err,
 		)
 		http.Error(w, "invalid metric", http.StatusInternalServerError)
 		return

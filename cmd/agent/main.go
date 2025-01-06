@@ -34,11 +34,11 @@ func runAgent(address string, reportInterval, pollInterval time.Duration, log *l
 	for {
 		select {
 		case <-tickerCollector.C:
-			metric := collector.Collector()
 
 			atomic.AddInt64(&pollCount, 1)
-
 			randomValue := rand.Float64() * 100.0
+
+			metric := collector.Collector()
 
 			metricsDTO = api.Metrics{
 				Alloc:         float64(metric.Alloc) / 1024,
