@@ -11,16 +11,17 @@ import (
 )
 
 type FileStoreHandler struct {
-	memoryStore Store // Оборачиваемый MemoryStore
+	memoryStore Store
 	filePath    string
-	mutex       sync.Mutex
+	mutex       *sync.Mutex
 }
 
-// NewFileStore создаёт новый экземпляр FileStore
+// NewFileStore создает новый экземпляр FileStoreHandler.
 func NewFileStore(memoryStore Store, filePath string) *FileStoreHandler {
 	return &FileStoreHandler{
 		memoryStore: memoryStore,
 		filePath:    filePath,
+		mutex:       &sync.Mutex{},
 	}
 }
 

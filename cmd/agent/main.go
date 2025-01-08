@@ -2,7 +2,7 @@ package main
 
 import (
 	"math/rand"
-	"sync/atomic"
+	"sync"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -28,14 +28,14 @@ func runAgent(address string, reportInterval, pollInterval time.Duration, log *l
 	defer tickerSender.Stop()
 
 	var metricsDTO api.Metrics
-
 	var pollCount int64
+	var mu sync.Mutex
 
 	for {
 		select {
 		case <-tickerCollector.C:
-
-			atomic.AddInt64(&pollCount, 1)
+			mu.Lock()
+			pollCount++
 			randomValue := rand.Float64() * 100.0
 
 			metric := collector.Collector()
@@ -71,9 +71,12 @@ func runAgent(address string, reportInterval, pollInterval time.Duration, log *l
 				PollCount:     pollCount,
 				RandomValue:   randomValue,
 			}
+			mu.Unlock()
 
 		case <-tickerSender.C:
+			mu.Lock()
 			err := metricClient.SendMetrics(metricsDTO)
+			mu.Unlock()
 			if err != nil {
 				log.Errorf("error sending metrics: %v\n", err)
 			}
