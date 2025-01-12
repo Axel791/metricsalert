@@ -2,37 +2,42 @@ package mocks
 
 import (
 	"github.com/stretchr/testify/mock"
+
+	"github.com/Axel791/metricsalert/internal/server/model/domain"
 )
 
 type MockStore struct {
 	mock.Mock
 }
 
-func (m *MockStore) UpdateGauge(name string, value float64) float64 {
+func (m *MockStore) UpdateGauge(name string, value float64) domain.Metrics {
 	args := m.Called(name, value)
 	if result := args.Get(0); result != nil {
-		return result.(float64)
+		return result.(domain.Metrics)
 	}
-	return 0
+	return domain.Metrics{}
 }
 
-func (m *MockStore) UpdateCounter(name string, value int64) int64 {
+func (m *MockStore) UpdateCounter(name string, value int64) domain.Metrics {
 	args := m.Called(name, value)
 	if result := args.Get(0); result != nil {
-		return result.(int64)
+		return result.(domain.Metrics)
 	}
-	return 0
+	return domain.Metrics{}
 }
 
-func (m *MockStore) GetMetric(name string) interface{} {
-	args := m.Called(name)
+func (m *MockStore) GetMetric(metricsDomain domain.Metrics) domain.Metrics {
+	args := m.Called(metricsDomain.ID)
 	if result := args.Get(0); result != nil {
-		return result
+		return result.(domain.Metrics)
 	}
-	return 0
+	return domain.Metrics{}
 }
 
-func (m *MockStore) GetAllMetrics() map[string]interface{} {
+func (m *MockStore) GetAllMetrics() map[string]domain.Metrics {
 	args := m.Called()
-	return args.Get(0).(map[string]interface{})
+	if result := args.Get(0); result != nil {
+		return result.(map[string]domain.Metrics)
+	}
+	return make(map[string]domain.Metrics)
 }

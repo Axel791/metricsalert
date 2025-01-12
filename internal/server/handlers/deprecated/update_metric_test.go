@@ -1,10 +1,14 @@
-package handlers
+package deprecated
 
 import (
 	"flag"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"gopkg.in/guregu/null.v4"
+
+	"github.com/Axel791/metricsalert/internal/server/model/domain"
 
 	"github.com/Axel791/metricsalert/internal/server/repositories/mocks"
 
@@ -42,7 +46,11 @@ func TestUpdateMetricHandler(t *testing.T) {
 			mockBehavior: func() {
 				mockStore.On(
 					"UpdateGauge", "testMetric", 123.45).
-					Return(123.45).Once()
+					Return(domain.Metrics{
+						ID:    "testMetric",
+						MType: Gauge,
+						Value: null.NewFloat(123.45, true),
+					}).Once()
 			},
 		},
 		{
@@ -51,7 +59,13 @@ func TestUpdateMetricHandler(t *testing.T) {
 			method:         http.MethodPost,
 			expectedStatus: http.StatusOK,
 			mockBehavior: func() {
-				mockStore.On("UpdateCounter", "testMetric", int64(10)).Return(int64(10)).Once()
+				mockStore.On(
+					"UpdateCounter", "testMetric", int64(10)).
+					Return(domain.Metrics{
+						ID:    "testMetric",
+						MType: Counter,
+						Delta: null.NewInt(10, true),
+					}).Once()
 			},
 		},
 		{

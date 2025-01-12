@@ -1,4 +1,4 @@
-package validatiors
+package validators
 
 import (
 	"net"
