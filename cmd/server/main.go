@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
-	"github.com/go-chi/chi/v5/middleware"
 	"net/http"
 	"time"
+
+	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/Axel791/metricsalert/internal/server/handlers/deprecated"
 
@@ -97,7 +98,6 @@ func main() {
 	)
 	log.Infof("server started on %s", addr)
 	err = http.ListenAndServe(addr, router)
-
 	if err != nil {
 		log.Fatalf("error starting server: %v", err)
 	}

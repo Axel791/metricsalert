@@ -2,8 +2,9 @@ package repositories
 
 import (
 	"context"
-	"github.com/Axel791/metricsalert/internal/server/model/domain"
 	"time"
+
+	"github.com/Axel791/metricsalert/internal/server/model/domain"
 )
 
 type StoreOptions struct {

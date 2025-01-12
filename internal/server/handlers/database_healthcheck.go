@@ -1,8 +1,9 @@
 package handlers
 
 import (
-	"github.com/jmoiron/sqlx"
 	"net/http"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type DatabaseHealthCheckHandler struct {
