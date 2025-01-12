@@ -12,6 +12,7 @@ type Config struct {
 	FileStoragePath string `mapstructure:"FILE_STORAGE_PATH"`
 	Restore         bool   `mapstructure:"RESTORE"`
 	UseFileStorage  bool   `mapstructure:"USE_FILE_STORAGE"`
+	DatabaseDSN     string `mapstructure:"DATABASE_DSN"`
 }
 
 // ServerLoadConfig загружает конфигурацию из .env, переменных окружения и задает значения по умолчанию

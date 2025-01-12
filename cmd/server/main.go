@@ -32,7 +32,7 @@ func main() {
 		log.Fatalf("error loading config: %v", err)
 	}
 
-	addr, storeIntervalFlag, filePathFlag, restoreFlag := config.ParseFlags(cfg)
+	addr, databaseDSN, storeIntervalFlag, filePathFlag, restoreFlag := config.ParseFlags(cfg)
 
 	if !validators.IsValidAddress(addr, false) {
 		log.Fatalf("invalid address: %s\n", addr)
@@ -71,12 +71,17 @@ func main() {
 	)
 	router.Get(
 		"/healthcheck",
-		handlers.HealthCheckHandler,
+		handlers.NewHealthCheckHandler,
 	)
 	router.Method(
 		http.MethodGet,
 		"/",
 		handlers.NewGetMetricsHTMLHandler(metricsService),
+	)
+	router.Method(
+		http.MethodGet,
+		"/ping",
+		handlers.NewDatabaseHealthCheckHandler(databaseDSN),
 	)
 
 	// Устаревшие маршруты
