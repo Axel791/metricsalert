@@ -1,9 +1,12 @@
 package repositories
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"sync"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 
@@ -17,12 +20,28 @@ type FileStoreHandler struct {
 }
 
 // NewFileStore создает новый экземпляр FileStoreHandler.
-func NewFileStore(memoryStore Store, filePath string) *FileStoreHandler {
-	return &FileStoreHandler{
+func NewFileStore(
+	ctx context.Context,
+	memoryStore Store,
+	filePath string,
+	restoreFlag bool,
+	storeInterval time.Duration,
+) (*FileStoreHandler, error) {
+	fs := &FileStoreHandler{
 		memoryStore: memoryStore,
 		filePath:    filePath,
 		mutex:       &sync.Mutex{},
 	}
+	if restoreFlag {
+		if err := fs.load(); err != nil {
+			log.Warnf("failed to load metrics from file %q: %v", filePath, err)
+			return nil, fmt.Errorf("failed to load metrics from file %q: %w", filePath, err)
+		}
+	}
+
+	fs.startAutoSave(ctx, storeInterval)
+
+	return fs, nil
 }
 
 // UpdateGauge обновляет Gauge в памяти и возвращает обновлённую метрику
@@ -31,7 +50,7 @@ func (fs *FileStoreHandler) UpdateGauge(name string, value float64) domain.Metri
 	defer fs.mutex.Unlock()
 
 	metric := fs.memoryStore.UpdateGauge(name, value)
-	_ = fs.SaveToFile()
+	_ = fs.saveToFile()
 	return metric
 }
 
@@ -41,7 +60,7 @@ func (fs *FileStoreHandler) UpdateCounter(name string, value int64) domain.Metri
 	defer fs.mutex.Unlock()
 
 	metric := fs.memoryStore.UpdateCounter(name, value)
-	_ = fs.SaveToFile()
+	_ = fs.saveToFile()
 	return metric
 }
 
@@ -56,7 +75,7 @@ func (fs *FileStoreHandler) GetAllMetrics() map[string]domain.Metrics {
 }
 
 // Load загружает метрики из файла в память
-func (fs *FileStoreHandler) Load() error {
+func (fs *FileStoreHandler) load() error {
 	fs.mutex.Lock()
 	defer fs.mutex.Unlock()
 
@@ -86,8 +105,34 @@ func (fs *FileStoreHandler) Load() error {
 	return nil
 }
 
+// StartAutoSave запускает периодическое сохранение.
+func (fs *FileStoreHandler) startAutoSave(ctx context.Context, storeInterval time.Duration) {
+	if storeInterval <= 0 {
+		log.Infof("Auto-save disabled (storeInterval=%v)", storeInterval)
+		return
+	}
+
+	ticker := time.NewTicker(storeInterval)
+	log.Infof("Starting auto-save every %s seconds", storeInterval)
+
+	go func() {
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				log.Info("Auto-save context canceled, stopping...")
+				return
+			case <-ticker.C:
+				if err := fs.saveToFile(); err != nil {
+					log.Errorf("failed to auto-save metrics: %v", err)
+				}
+			}
+		}
+	}()
+}
+
 // SaveToFile сохраняет все метрики в файл
-func (fs *FileStoreHandler) SaveToFile() error {
+func (fs *FileStoreHandler) saveToFile() error {
 	file, err := os.Create(fs.filePath)
 	if err != nil {
 		return err

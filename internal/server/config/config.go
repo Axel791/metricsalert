@@ -11,6 +11,7 @@ type Config struct {
 	StoreInterval   int64  `mapstructure:"STORE_INTERVAL"`
 	FileStoragePath string `mapstructure:"FILE_STORAGE_PATH"`
 	Restore         bool   `mapstructure:"RESTORE"`
+	UseFileStorage  bool   `mapstructure:"USE_FILE_STORAGE"`
 }
 
 // ServerLoadConfig загружает конфигурацию из .env, переменных окружения и задает значения по умолчанию
@@ -23,6 +24,7 @@ func ServerLoadConfig() (*Config, error) {
 	viper.SetDefault("STORE_INTERVAL", 300)
 	viper.SetDefault("FILE_STORAGE_PATH", "./data.txt")
 	viper.SetDefault("RESTORE", true)
+	viper.SetDefault("USE_FILE_STORAGE", true)
 
 	viper.AutomaticEnv()
 
