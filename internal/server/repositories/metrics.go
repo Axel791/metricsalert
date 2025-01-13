@@ -1,56 +1,143 @@
 package repositories
 
 import (
+	"context"
+	"fmt"
+
+	sq "github.com/Masterminds/squirrel"
+	"github.com/jmoiron/sqlx"
 	"gopkg.in/guregu/null.v4"
 
 	"github.com/Axel791/metricsalert/internal/server/model/domain"
 )
 
-type MetricRepository struct {
-	metrics map[string]domain.Metrics
+var (
+	cursor = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
+)
+
+// MetricsRepositoryHandler хранит ссылку на БД.
+type MetricsRepositoryHandler struct {
+	db *sqlx.DB
 }
 
-func NewMetricRepository() *MetricRepository {
-	return &MetricRepository{metrics: make(map[string]domain.Metrics)}
+// NewMetricRepository — конструктор репозитория PostgreSQL.
+func NewMetricRepository(db *sqlx.DB) *MetricsRepositoryHandler {
+	return &MetricsRepositoryHandler{db: db}
 }
 
-func (r *MetricRepository) UpdateGauge(name string, value float64) domain.Metrics {
-	metric, exists := r.metrics[name]
-	if exists && metric.MType == domain.Gauge {
-		metric.Value = null.FloatFrom(value)
-	} else {
-		metric = domain.Metrics{
-			ID:    name,
-			MType: domain.Gauge,
-			Value: null.FloatFrom(value),
+// UpdateGauge - обновление Gauge.
+func (r *MetricsRepositoryHandler) UpdateGauge(ctx context.Context, name string, value float64) (domain.Metrics, error) {
+	metric := domain.Metrics{
+		ID:    name,
+		MType: domain.Gauge,
+		Value: null.FloatFrom(value),
+		Delta: null.Int{},
+	}
+
+	query, args, err := cursor.
+		Insert("metrics").
+		Columns("id", "metric_type", "value", "delta").
+		Values(metric.ID, metric.MType, metric.Value, nil).
+		Suffix(`
+			ON CONFLICT (id) 
+			DO UPDATE SET
+				metric_type = EXCLUDED.metric_type,
+				value       = EXCLUDED.value,
+				delta       = NULL
+		`).
+		ToSql()
+
+	if err != nil {
+		return domain.Metrics{}, fmt.Errorf("building upsert gauge query: %w", err)
+	}
+
+	_, execErr := r.db.ExecContext(ctx, query, args...)
+	if execErr != nil {
+		return domain.Metrics{}, fmt.Errorf("exec upsert gauge query: %w", execErr)
+	}
+
+	return metric, nil
+}
+
+// UpdateCounter - обновление counter
+func (r *MetricsRepositoryHandler) UpdateCounter(ctx context.Context, name string, value int64) (domain.Metrics, error) {
+	metric := domain.Metrics{
+		ID:    name,
+		MType: domain.Counter,
+		Delta: null.IntFrom(value),
+		Value: null.Float{},
+	}
+
+	query, args, err := cursor.
+		Insert("metrics").
+		Columns("id", "metric_type", "delta", "value").
+		Values(metric.ID, metric.MType, metric.Delta, nil).
+		Suffix(`
+			ON CONFLICT (id) 
+			DO UPDATE SET
+				metric_type = EXCLUDED.metric_type,
+				delta       = metrics.delta + EXCLUDED.delta,
+				value       = NULL
+		`).
+		ToSql()
+	if err != nil {
+		return domain.Metrics{}, fmt.Errorf("building upsert counter query: %w", err)
+	}
+
+	_, execErr := r.db.ExecContext(ctx, query, args...)
+	if execErr != nil {
+		return domain.Metrics{}, fmt.Errorf("exec upsert counter query: %w", execErr)
+	}
+
+	return metric, nil
+}
+
+// GetMetric - получение метрики по ее ID.
+func (r *MetricsRepositoryHandler) GetMetric(ctx context.Context, m domain.Metrics) (domain.Metrics, error) {
+	query, args, err := cursor.
+		Select("id", "metric_type", "value", "delta").
+		From("metrics").
+		Where(sq.Eq{"id": m.ID}).
+		Limit(1).
+		ToSql()
+	if err != nil {
+		return domain.Metrics{}, fmt.Errorf("build get metric query: %w", err)
+	}
+
+	var result domain.Metrics
+	err = r.db.GetContext(ctx, &result, query, args...)
+	if err != nil {
+		return domain.Metrics{}, fmt.Errorf("get metric from db: %w", err)
+	}
+
+	return result, nil
+}
+
+// GetAllMetrics - Получение всех метрик
+func (r *MetricsRepositoryHandler) GetAllMetrics(ctx context.Context) (map[string]domain.Metrics, error) {
+	query, args, err := cursor.
+		Select("id", "metric_type", "value", "delta").
+		From("metrics").
+		ToSql()
+	if err != nil {
+		return nil, fmt.Errorf("build get all metrics query: %w", err)
+	}
+
+	rows, err := r.db.QueryxContext(ctx, query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("query all metrics: %w", err)
+	}
+	defer rows.Close()
+
+	metricsMap := make(map[string]domain.Metrics)
+
+	for rows.Next() {
+		var m domain.Metrics
+		if scanErr := rows.StructScan(&m); scanErr != nil {
+			return nil, fmt.Errorf("scan metric row: %w", scanErr)
 		}
+		metricsMap[m.ID] = m
 	}
-	r.metrics[name] = metric
-	return metric
-}
 
-func (r *MetricRepository) UpdateCounter(name string, value int64) domain.Metrics {
-	metric, exists := r.metrics[name]
-	if exists && metric.MType == domain.Counter {
-		metric.Delta = null.IntFrom(metric.Delta.Int64 + value)
-	} else {
-		metric = domain.Metrics{
-			ID:    name,
-			MType: domain.Counter,
-			Delta: null.IntFrom(value),
-		}
-	}
-	r.metrics[name] = metric
-	return metric
-}
-
-func (r *MetricRepository) GetMetric(metricsDomain domain.Metrics) domain.Metrics {
-	if metric, exists := r.metrics[metricsDomain.ID]; exists {
-		return metric
-	}
-	return domain.Metrics{}
-}
-
-func (r *MetricRepository) GetAllMetrics() map[string]domain.Metrics {
-	return r.metrics
+	return metricsMap, nil
 }

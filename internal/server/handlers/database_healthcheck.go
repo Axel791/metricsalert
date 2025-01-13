@@ -15,7 +15,7 @@ func NewDatabaseHealthCheckHandler(databaseDSN string) *DatabaseHealthCheckHandl
 }
 
 func (dh *DatabaseHealthCheckHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
-	db, err := sqlx.Connect("postgresql", dh.databaseDSN)
+	db, err := sqlx.Connect("postgres", dh.databaseDSN)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

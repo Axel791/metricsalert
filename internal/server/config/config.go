@@ -13,6 +13,7 @@ type Config struct {
 	Restore         bool   `mapstructure:"RESTORE"`
 	UseFileStorage  bool   `mapstructure:"USE_FILE_STORAGE"`
 	DatabaseDSN     string `mapstructure:"DATABASE_DSN"`
+	MigrationsPath  string `mapstructure:"MIGRATIONS_PATH"`
 }
 
 // ServerLoadConfig загружает конфигурацию из .env, переменных окружения и задает значения по умолчанию
@@ -26,6 +27,7 @@ func ServerLoadConfig() (*Config, error) {
 	viper.SetDefault("FILE_STORAGE_PATH", "./data.txt")
 	viper.SetDefault("RESTORE", true)
 	viper.SetDefault("USE_FILE_STORAGE", true)
+	viper.SetDefault("MIGRATIONS_PATH", "./migrations")
 
 	viper.AutomaticEnv()
 

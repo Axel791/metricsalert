@@ -53,7 +53,7 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	metricDTO, err := h.metricService.CreateOrUpdateMetric(input.MType, input.ID, value)
+	metricDTO, err := h.metricService.CreateOrUpdateMetric(r.Context(), input.MType, input.ID, value)
 	if err != nil {
 		h.logger.Infof("UpdateMetricHandler: failed to update metric: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)

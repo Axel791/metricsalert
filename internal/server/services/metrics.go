@@ -1,7 +1,9 @@
 package services
 
 import (
+	"context"
 	"errors"
+	"fmt"
 
 	"github.com/Axel791/metricsalert/internal/server/model/domain"
 	"github.com/Axel791/metricsalert/internal/server/model/dto"
@@ -18,7 +20,7 @@ func NewMetricsService(store repositories.Store) *MetricsService {
 	}
 }
 
-func (ms *MetricsService) GetMetric(metricType, name string) (dto.Metrics, error) {
+func (ms *MetricsService) GetMetric(ctx context.Context, metricType, name string) (dto.Metrics, error) {
 	var metricsDTO dto.Metrics
 
 	metric := domain.Metrics{
@@ -34,7 +36,11 @@ func (ms *MetricsService) GetMetric(metricType, name string) (dto.Metrics, error
 		return metricsDTO, err
 	}
 
-	metricsDomain := ms.store.GetMetric(metric)
+	metricsDomain, err := ms.store.GetMetric(ctx, metric)
+	if err != nil {
+		return metricsDTO, errors.New(fmt.Sprintf("GetMetric: error getting metric domain: %v", err))
+	}
+
 	if metricsDomain.ID == "" {
 		return metricsDTO, errors.New("metric not found")
 	}
@@ -49,7 +55,9 @@ func (ms *MetricsService) GetMetric(metricType, name string) (dto.Metrics, error
 	return metricsDTO, nil
 }
 
-func (ms *MetricsService) CreateOrUpdateMetric(metricType, name string, value interface{}) (dto.Metrics, error) {
+func (ms *MetricsService) CreateOrUpdateMetric(
+	ctx context.Context, metricType, name string, value interface{},
+) (dto.Metrics, error) {
 	var metricsDTO dto.Metrics
 
 	metric := domain.Metrics{
@@ -70,12 +78,19 @@ func (ms *MetricsService) CreateOrUpdateMetric(metricType, name string, value in
 	}
 
 	var updatedMetric domain.Metrics
+	var err error
 
 	switch metric.MType {
 	case domain.Gauge:
-		updatedMetric = ms.store.UpdateGauge(metric.ID, metric.Value.Float64)
+		updatedMetric, err = ms.store.UpdateGauge(ctx, metric.ID, metric.Value.Float64)
+		if err != nil {
+			return metricsDTO, errors.New(fmt.Sprintf("UpdateMetric: error updating metric: %v", err))
+		}
 	case domain.Counter:
-		updatedMetric = ms.store.UpdateCounter(metric.ID, metric.Delta.Int64)
+		updatedMetric, err = ms.store.UpdateCounter(ctx, metric.ID, metric.Delta.Int64)
+		if err != nil {
+			return metricsDTO, errors.New(fmt.Sprintf("UpdateMetric: error updating metric: %v", err))
+		}
 	default:
 		return metricsDTO, errors.New("unsupported metric type")
 	}
@@ -90,9 +105,12 @@ func (ms *MetricsService) CreateOrUpdateMetric(metricType, name string, value in
 	return metricsDTO, nil
 }
 
-func (ms *MetricsService) GetAllMetric() []dto.Metrics {
+func (ms *MetricsService) GetAllMetric(ctx context.Context) ([]dto.Metrics, error) {
 	var metricsDTO []dto.Metrics
-	metrics := ms.store.GetAllMetrics()
+	metrics, err := ms.store.GetAllMetrics(ctx)
+	if err != nil {
+		return metricsDTO, errors.New(fmt.Sprintf("GetAllMetrics: error getting metrics: %v", err))
+	}
 
 	for _, metric := range metrics {
 		metricsDTO = append(
@@ -105,5 +123,5 @@ func (ms *MetricsService) GetAllMetric() []dto.Metrics {
 			},
 		)
 	}
-	return metricsDTO
+	return metricsDTO, nil
 }

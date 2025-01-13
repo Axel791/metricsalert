@@ -16,8 +16,13 @@ func NewGetMetricsHTMLHandler(metricService services.Metric) *GetMetricsHTMLHand
 	return &GetMetricsHTMLHandler{metricService: metricService}
 }
 
-func (h *GetMetricsHTMLHandler) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
-	metrics := h.metricService.GetAllMetric()
+func (h *GetMetricsHTMLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	metrics, err := h.metricService.GetAllMetric(r.Context())
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	metricsMap := make(map[string]interface{})
 	for _, metric := range metrics {

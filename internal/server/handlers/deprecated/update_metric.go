@@ -32,6 +32,8 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	ctx := r.Context()
+
 	switch metricType {
 	case Gauge:
 		v, err := strconv.ParseFloat(value, 64)
@@ -39,14 +41,21 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 			http.Error(w, "invalid gauge value", http.StatusBadRequest)
 			return
 		}
-		h.storage.UpdateGauge(name, v)
+		_, err = h.storage.UpdateGauge(ctx, name, v)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
 	case Counter:
 		v, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
 			http.Error(w, "Invalid counter value", http.StatusBadRequest)
 			return
 		}
-		h.storage.UpdateCounter(name, v)
+		_, err = h.storage.UpdateCounter(ctx, name, v)
+		if err != nil {
+			http.Error(w, "Invalid counter value", http.StatusBadRequest)
+		}
 	default:
 		http.Error(w, "invalid metric type", http.StatusBadRequest)
 		return

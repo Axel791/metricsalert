@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/jmoiron/sqlx"
 	"net/http"
 	"time"
 
@@ -17,6 +18,8 @@ import (
 	"github.com/Axel791/metricsalert/internal/shared/validators"
 
 	"github.com/go-chi/chi/v5"
+	_ "github.com/lib/pq"
+	"github.com/pressly/goose/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -39,6 +42,16 @@ func main() {
 		log.Fatalf("invalid address: %s\n", addr)
 	}
 
+	db, err := sqlx.Connect("postgres", databaseDSN)
+	if err != nil {
+		log.Fatalf("error connection to database %v", err)
+	}
+	defer db.Close()
+
+	if err := goose.RunContext(context.Background(), "up", db.DB, cfg.MigrationsPath); err != nil {
+		log.Fatalf("error apply migrations: %v", err)
+	}
+
 	router := chi.NewRouter()
 
 	router.Use(serverMiddleware.WithLogging)
@@ -52,7 +65,7 @@ func main() {
 		UseFileStore:    cfg.UseFileStorage,
 	}
 
-	storage, err := repositories.StoreFactory(context.Background(), opts)
+	storage, err := repositories.StoreFactory(context.Background(), db, opts)
 	if err != nil {
 		log.Fatalf("error creating storage: %v", err)
 	}
