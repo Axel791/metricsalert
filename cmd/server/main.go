@@ -80,6 +80,11 @@ func main() {
 	)
 	router.Method(
 		http.MethodPost,
+		"/updates",
+		handlers.NewUpdatesMetricsHandler(metricsService, log),
+	)
+	router.Method(
+		http.MethodPost,
 		"/value",
 		handlers.NewGetMetricHandler(metricsService, log),
 	)

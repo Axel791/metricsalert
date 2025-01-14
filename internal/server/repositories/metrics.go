@@ -93,11 +93,11 @@ func (r *MetricsRepositoryHandler) UpdateCounter(ctx context.Context, name strin
 }
 
 // GetMetric - получение метрики по ее ID.
-func (r *MetricsRepositoryHandler) GetMetric(ctx context.Context, m domain.Metrics) (domain.Metrics, error) {
+func (r *MetricsRepositoryHandler) GetMetric(ctx context.Context, metric domain.Metrics) (domain.Metrics, error) {
 	query, args, err := cursor.
 		Select("id", "metric_type", "value", "delta").
 		From("metrics").
-		Where(sq.Eq{"id": m.ID}).
+		Where(sq.Eq{"id": metric.ID}).
 		Limit(1).
 		ToSql()
 	if err != nil {
@@ -140,4 +140,33 @@ func (r *MetricsRepositoryHandler) GetAllMetrics(ctx context.Context) (map[strin
 	}
 
 	return metricsMap, nil
+}
+
+// BatchUpdateMetrics - обновление метрик батчами
+func (r *MetricsRepositoryHandler) BatchUpdateMetrics(ctx context.Context, metrics []domain.Metrics) error {
+	insertBuilder := cursor.Insert("metrics").
+		Columns("id", "metric_type", "value", "delta")
+
+	for _, metric := range metrics {
+		insertBuilder = insertBuilder.Values(metric.ID, metric.MType, metric.Value, metric.Delta)
+	}
+
+	sql, args, err := insertBuilder.ToSql()
+	if err != nil {
+		return fmt.Errorf("cannot build insert query: %w", err)
+	}
+
+	sql += `
+        ON CONFLICT (id)
+        DO UPDATE SET
+            metric_type = EXCLUDED.metric_type,
+            value       = EXCLUDED.value,
+            delta       = EXCLUDED.delta
+    `
+
+	if _, err := r.db.ExecContext(ctx, sql, args...); err != nil {
+		return fmt.Errorf("cannot exec batch upsert: %w", err)
+	}
+
+	return nil
 }

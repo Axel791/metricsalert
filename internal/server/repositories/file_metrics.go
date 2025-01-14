@@ -92,6 +92,10 @@ func (fs *FileStoreHandler) GetAllMetrics(ctx context.Context) (map[string]domai
 	return metric, nil
 }
 
+func (fs *FileStoreHandler) BatchUpdateMetrics(ctx context.Context, m []domain.Metrics) error {
+	return fs.memoryStore.BatchUpdateMetrics(ctx, m)
+}
+
 // Load загружает метрики из файла в память
 func (fs *FileStoreHandler) load(ctx context.Context) error {
 	fs.mutex.Lock()
