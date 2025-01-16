@@ -2,11 +2,15 @@ package config
 
 import (
 	"flag"
+	log "github.com/sirupsen/logrus"
 )
 
 func ParseFlags(cfg *Config) (string, string, int64, string, bool) {
 	addr := flag.String("a", cfg.Address, "HTTP server address")
+
 	databaseDSN := flag.String("d", cfg.DatabaseDSN, "database DSN")
+
+	log.Infof("databasedsn: %s", *databaseDSN)
 
 	storeIntervalFlag := flag.Int64(
 		"i", cfg.StoreInterval, "interval in seconds for storing metrics (0 means sync)",
