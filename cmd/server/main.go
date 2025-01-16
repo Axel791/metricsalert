@@ -26,6 +26,15 @@ import (
 func main() {
 	log := logrus.New()
 
+	address, storeInterval, storeFile, restore, _, _, dbAddress := config.SetServerParams()
+
+	log.Infof("test address: %s", address)
+	log.Infof("test store interval: %s", storeInterval)
+	log.Infof("test store file: %s", storeFile)
+	log.Infof("test retention interval: %s", storeInterval)
+	log.Infof("test retention file: %v", restore)
+	log.Infof("test db address: %s", dbAddress)
+
 	log.Infof("Command-line arguments: %v", os.Args)
 
 	log.SetFormatter(&logrus.TextFormatter{
