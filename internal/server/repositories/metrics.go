@@ -185,8 +185,11 @@ func (r *MetricsRepositoryHandler) BatchUpdateMetrics(ctx context.Context, metri
 			ON CONFLICT (id)
 			DO UPDATE SET
 				metric_type = EXCLUDED.metric_type,
-				value       = EXCLUDED.value,
-				delta       = EXCLUDED.delta
+				value = EXCLUDED.value,
+				delta = CASE 
+					WHEN EXCLUDED.metric_type = 'Counter' THEN metrics.delta + EXCLUDED.delta
+					ELSE EXCLUDED.delta
+				END
 		`
 
 		if _, err := r.db.ExecContext(ctx, sql, args...); err != nil {

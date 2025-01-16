@@ -37,6 +37,8 @@ func main() {
 
 	addr, databaseDSN, storeIntervalFlag, filePathFlag, restoreFlag := config.ParseFlags(cfg)
 
+	log.Infof("flags: %s %s", addr, databaseDSN)
+
 	if !validators.IsValidAddress(addr, false) {
 		log.Fatalf("invalid address: %s\n", addr)
 	}
