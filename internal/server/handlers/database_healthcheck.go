@@ -18,6 +18,7 @@ func (dh *DatabaseHealthCheckHandler) ServeHTTP(w http.ResponseWriter, _ *http.R
 	db, err := sqlx.Connect("postgres", dh.databaseDSN)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
 	}
 	defer db.Close()
 	w.WriteHeader(http.StatusOK)
