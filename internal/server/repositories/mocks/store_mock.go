@@ -5,7 +5,6 @@ import (
 
 	"github.com/stretchr/testify/mock"
 
-	"github.com/Axel791/metricsalert/internal/server/model/api"
 	"github.com/Axel791/metricsalert/internal/server/model/domain"
 )
 
@@ -46,7 +45,7 @@ func (m *MockStore) GetAllMetrics(ctx context.Context) (map[string]domain.Metric
 	return make(map[string]domain.Metrics), args.Error(1)
 }
 
-func (m *MockStore) BatchMetricsUpdate(ctx context.Context, metrics []api.Metrics) error {
+func (m *MockStore) BatchUpdateMetrics(ctx context.Context, metrics []domain.Metrics) error {
 	args := m.Called(ctx, metrics)
 	return args.Error(0)
 }
