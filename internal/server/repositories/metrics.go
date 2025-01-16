@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"github.com/Axel791/metricsalert/internal/server/db"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
@@ -29,7 +30,7 @@ func NewMetricRepository(db *sqlx.DB) *MetricsRepositoryHandler {
 func (r *MetricsRepositoryHandler) UpdateGauge(ctx context.Context, name string, value float64) (domain.Metrics, error) {
 	var result domain.Metrics
 
-	err := RetryOperation(func() error {
+	err := db.RetryOperation(func() error {
 		metric := domain.Metrics{
 			ID:    name,
 			MType: domain.Gauge,
@@ -70,7 +71,7 @@ func (r *MetricsRepositoryHandler) UpdateGauge(ctx context.Context, name string,
 func (r *MetricsRepositoryHandler) UpdateCounter(ctx context.Context, name string, value int64) (domain.Metrics, error) {
 	var result domain.Metrics
 
-	err := RetryOperation(func() error {
+	err := db.RetryOperation(func() error {
 		metric := domain.Metrics{
 			ID:    name,
 			MType: domain.Counter,
@@ -110,7 +111,7 @@ func (r *MetricsRepositoryHandler) UpdateCounter(ctx context.Context, name strin
 func (r *MetricsRepositoryHandler) GetMetric(ctx context.Context, metric domain.Metrics) (domain.Metrics, error) {
 	var result domain.Metrics
 
-	err := RetryOperation(func() error {
+	err := db.RetryOperation(func() error {
 		query, args, err := cursor.
 			Select("id", "metric_type", "value", "delta").
 			From("metrics").
@@ -136,7 +137,7 @@ func (r *MetricsRepositoryHandler) GetMetric(ctx context.Context, metric domain.
 func (r *MetricsRepositoryHandler) GetAllMetrics(ctx context.Context) (map[string]domain.Metrics, error) {
 	metricsMap := make(map[string]domain.Metrics)
 
-	err := RetryOperation(func() error {
+	err := db.RetryOperation(func() error {
 		query, args, err := cursor.
 			Select("id", "metric_type", "value", "delta").
 			From("metrics").
@@ -167,7 +168,7 @@ func (r *MetricsRepositoryHandler) GetAllMetrics(ctx context.Context) (map[strin
 
 // BatchUpdateMetrics - обновление метрик батчами
 func (r *MetricsRepositoryHandler) BatchUpdateMetrics(ctx context.Context, metrics []domain.Metrics) error {
-	return RetryOperation(func() error {
+	return db.RetryOperation(func() error {
 		insertBuilder := cursor.Insert("metrics").
 			Columns("id", "metric_type", "value", "delta")
 

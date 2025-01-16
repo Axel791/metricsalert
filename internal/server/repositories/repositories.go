@@ -24,7 +24,14 @@ type Store interface {
 }
 
 func StoreFactory(ctx context.Context, db *sqlx.DB, opts StoreOptions) (Store, error) {
-	store := NewMetricRepository(db)
+	var store Store
+
+	if db != nil {
+		store = NewMetricRepository(db)
+	} else {
+		store = NewMetricMapRepository()
+	}
+
 	if opts.UseFileStore {
 		return NewFileStore(ctx, store, opts.FilePath, opts.RestoreFromFile, opts.StoreInterval)
 	}

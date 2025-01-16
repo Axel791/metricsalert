@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"github.com/jmoiron/sqlx"
 	"net/http"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 	"github.com/Axel791/metricsalert/internal/server/handlers/deprecated"
 
 	"github.com/Axel791/metricsalert/internal/server/config"
+	"github.com/Axel791/metricsalert/internal/server/db"
 	"github.com/Axel791/metricsalert/internal/server/handlers"
 	serverMiddleware "github.com/Axel791/metricsalert/internal/server/middleware"
 	"github.com/Axel791/metricsalert/internal/server/repositories"
@@ -19,7 +19,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	_ "github.com/lib/pq"
-	"github.com/pressly/goose/v3"
 	"github.com/sirupsen/logrus"
 )
 
@@ -41,15 +40,9 @@ func main() {
 	if !validators.IsValidAddress(addr, false) {
 		log.Fatalf("invalid address: %s\n", addr)
 	}
-
-	db, err := sqlx.Connect("postgres", databaseDSN)
+	dbConn, err := db.ConnectDB(databaseDSN, cfg)
 	if err != nil {
-		log.Fatalf("error connection to database %v", err)
-	}
-	defer db.Close()
-
-	if err := goose.RunContext(context.Background(), "up", db.DB, cfg.MigrationsPath); err != nil {
-		log.Fatalf("error apply migrations: %v", err)
+		log.Fatalf("error connecting to database: %v", err)
 	}
 
 	router := chi.NewRouter()
@@ -65,7 +58,7 @@ func main() {
 		UseFileStore:    cfg.UseFileStorage,
 	}
 
-	storage, err := repositories.StoreFactory(context.Background(), db, opts)
+	storage, err := repositories.StoreFactory(context.Background(), dbConn, opts)
 	if err != nil {
 		log.Fatalf("error creating storage: %v", err)
 	}
