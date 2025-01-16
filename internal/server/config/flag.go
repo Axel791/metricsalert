@@ -3,8 +3,6 @@ package config
 import (
 	"flag"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"strconv"
 	"time"
 )
 
@@ -31,13 +29,13 @@ func ParseFlags(cfg *Config) (string, string, int64, string, bool) {
 
 func SetServerParams() (string, time.Duration, string, bool, bool, string, string) {
 	var (
-		flagRestore, restore             bool
-		flagStoreFile, storeFile         string
-		flagAddress                      string
-		flagStoreInterval, storeInterval time.Duration
-		flagDebug                        bool
-		flagKey                          string
-		flagDataBase                     string
+		flagRestore       bool
+		flagStoreFile     string
+		flagAddress       string
+		flagStoreInterval time.Duration
+		flagDebug         bool
+		flagKey           string
+		flagDataBase      string
 	)
 
 	flag.BoolVar(&flagRestore, "r", false, "restore_true/false")
@@ -48,36 +46,5 @@ func SetServerParams() (string, time.Duration, string, bool, bool, string, strin
 	flag.StringVar(&flagKey, "k", "", "hash_key")
 	flag.StringVar(&flagDataBase, "d", "", "db_address")
 	flag.Parse()
-	address, exists := os.LookupEnv("ADDRESS")
-	if !exists {
-		address = flagAddress
-	}
-	if storeFile, exists = os.LookupEnv("STORE_FILE"); !exists {
-		storeFile = flagStoreFile
-	}
-	if strStoreInterval, exists := os.LookupEnv("STORE_INTERVAL"); !exists {
-		storeInterval = flagStoreInterval
-	} else {
-		var err error
-		if storeInterval, err = time.ParseDuration(strStoreInterval); err != nil {
-			storeInterval = flagStoreInterval
-		}
-	}
-	if strRestore, exists := os.LookupEnv("RESTORE"); !exists {
-		restore = flagRestore
-	} else {
-		var err error
-		if restore, err = strconv.ParseBool(strRestore); err != nil {
-			restore = flagRestore
-		}
-	}
-	key, exists := os.LookupEnv("KEY")
-	if !exists {
-		key = flagKey
-	}
-	database, exists := os.LookupEnv("DATABASE_DSN")
-	if !exists {
-		database = flagDataBase
-	}
-	return address, storeInterval, storeFile, restore, flagDebug, key, database
+	return flagAddress, flagStoreInterval, flagStoreFile, flagRestore, flagDebug, flagKey, flagDataBase
 }
