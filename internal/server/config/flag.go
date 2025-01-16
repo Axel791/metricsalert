@@ -17,7 +17,7 @@ func ParseFlags(cfg *Config) (string, string, int64, string, bool) {
 
 	// Привязываем флаги к переменным
 	flag.StringVar(&flagAddress, "a", cfg.Address, "HTTP server address")
-	flag.StringVar(&flagDatabaseDSN, "d", cfg.DatabaseDSN, "database DSN")
+	//flag.StringVar(&flagDatabaseDSN, "d", cfg.DatabaseDSN, "database DSN")
 	flag.Int64Var(&flagStoreInterval, "i", cfg.StoreInterval, "interval in seconds for storing metrics (0 means sync)")
 	flag.StringVar(&flagFileStoragePath, "f", cfg.FileStoragePath, "path to file for storing metrics")
 	flag.BoolVar(&flagRestore, "r", cfg.Restore, "restore metrics from file on start (true/false)")
@@ -39,9 +39,6 @@ func ParseFlags(cfg *Config) (string, string, int64, string, bool) {
 
 	if flagAddress != "" {
 		cfg.Address = flagAddress
-	}
-	if flagDatabaseDSN != "" {
-		cfg.DatabaseDSN = flagDatabaseDSN
 	}
 	if flagStoreInterval != 0 {
 		cfg.StoreInterval = flagStoreInterval
