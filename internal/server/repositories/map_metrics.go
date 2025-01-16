@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"github.com/Axel791/metricsalert/internal/server/model/domain"
 	"gopkg.in/guregu/null.v4"
 )
@@ -55,6 +56,22 @@ func (r *MetricMapRepositoryHandler) GetAllMetrics(_ context.Context) (map[strin
 	return r.metrics, nil
 }
 
-func (r *MetricMapRepositoryHandler) BatchUpdateMetrics(ctx context.Context, metrics []domain.Metrics) error {
+func (r *MetricMapRepositoryHandler) BatchUpdateMetrics(_ context.Context, metrics []domain.Metrics) error {
+	for _, metric := range metrics {
+		switch metric.MType {
+		case domain.Gauge:
+			_, err := r.UpdateGauge(context.Background(), metric.ID, metric.Value.Float64)
+			if err != nil {
+				return fmt.Errorf("failed to update gauge metric %s: %w", metric.ID, err)
+			}
+		case domain.Counter:
+			_, err := r.UpdateCounter(context.Background(), metric.ID, metric.Delta.Int64)
+			if err != nil {
+				return fmt.Errorf("failed to update counter metric %s: %w", metric.ID, err)
+			}
+		default:
+			return fmt.Errorf("unknown metric type %s for metric %s", metric.MType, metric.ID)
+		}
+	}
 	return nil
 }
