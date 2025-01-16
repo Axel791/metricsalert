@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -24,6 +25,9 @@ import (
 
 func main() {
 	log := logrus.New()
+
+	log.Infof("Command-line arguments: %v", os.Args)
+
 	log.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp:   true,
 		TimestampFormat: "2006-01-02 15:04:05",
