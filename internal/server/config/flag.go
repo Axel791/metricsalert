@@ -3,48 +3,57 @@ package config
 import (
 	"flag"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 func ParseFlags(cfg *Config) (string, string, int64, string, bool) {
-	addr := flag.String("a", cfg.Address, "HTTP server address")
+	// Переменные для хранения флагов
+	var flagAddress string
+	var flagDatabaseDSN string
+	var flagStoreInterval int64
+	var flagFileStoragePath string
+	var flagRestore bool
+	var flagUseFileStorage bool
+	var flagMigrationsPath string
 
-	databaseDSN := flag.String("d", cfg.DatabaseDSN, "database DSN")
+	// Привязываем флаги к переменным
+	flag.StringVar(&flagAddress, "a", cfg.Address, "HTTP server address")
+	flag.StringVar(&flagDatabaseDSN, "d", cfg.DatabaseDSN, "database DSN")
+	flag.Int64Var(&flagStoreInterval, "i", cfg.StoreInterval, "interval in seconds for storing metrics (0 means sync)")
+	flag.StringVar(&flagFileStoragePath, "f", cfg.FileStoragePath, "path to file for storing metrics")
+	flag.BoolVar(&flagRestore, "r", cfg.Restore, "restore metrics from file on start (true/false)")
+	flag.BoolVar(&flagUseFileStorage, "use-file", cfg.UseFileStorage, "use file storage (true/false)")
+	flag.StringVar(&flagMigrationsPath, "m", cfg.MigrationsPath, "path to database migrations")
 
-	storeIntervalFlag := flag.Int64(
-		"i", cfg.StoreInterval, "interval in seconds for storing metrics (0 means sync)",
-	)
-	filePathFlag := flag.String("f", cfg.FileStoragePath, "path to file for storing metrics")
-	restoreFlag := flag.Bool("r", cfg.Restore, "restore metrics from file on start (true/false)")
+	// Парсим флаги
 	flag.Parse()
 
-	log.Infof("addr %s", *addr)
-	log.Infof("databasedsn: %s", *databaseDSN)
-	log.Infof("store interval: %d", *storeIntervalFlag)
-	log.Infof("file path: %s", *filePathFlag)
-	log.Infof("restore interval: %v", *restoreFlag)
+	// Логирование для отладки
+	log.Printf("Parsed flags:")
+	log.Printf("  Address: %s", flagAddress)
+	log.Printf("  DatabaseDSN: %s", flagDatabaseDSN)
+	log.Printf("  StoreInterval: %d", flagStoreInterval)
+	log.Printf("  FileStoragePath: %s", flagFileStoragePath)
+	log.Printf("  Restore: %v", flagRestore)
+	log.Printf("  UseFileStorage: %v", flagUseFileStorage)
+	log.Printf("  MigrationsPath: %s", flagMigrationsPath)
 
-	return *addr, *databaseDSN, *storeIntervalFlag, *filePathFlag, *restoreFlag
-}
-
-func SetServerParams() (string, time.Duration, string, bool, bool, string, string) {
-	var (
-		flagRestore       bool
-		flagStoreFile     string
-		flagAddress       string
-		flagStoreInterval time.Duration
-		flagDebug         bool
-		flagKey           string
-		flagDataBase      string
-	)
-
-	flag.BoolVar(&flagRestore, "r", false, "restore_true/false")
-	flag.StringVar(&flagStoreFile, "f", "hh", "store_file")
-	flag.StringVar(&flagAddress, "a", "hh", "server_address")
-	flag.DurationVar(&flagStoreInterval, "i", 2, "store_interval_in_seconds")
-	flag.BoolVar(&flagDebug, "debug", false, "debug_true/false")
-	flag.StringVar(&flagKey, "k", "", "hash_key")
-	flag.StringVar(&flagDataBase, "d", "", "db_address")
-	flag.Parse()
-	return flagAddress, flagStoreInterval, flagStoreFile, flagRestore, flagDebug, flagKey, flagDataBase
+	if flagAddress != "" {
+		cfg.Address = flagAddress
+	}
+	if flagDatabaseDSN != "" {
+		cfg.DatabaseDSN = flagDatabaseDSN
+	}
+	if flagStoreInterval != 0 {
+		cfg.StoreInterval = flagStoreInterval
+	}
+	if flagFileStoragePath != "" {
+		cfg.FileStoragePath = flagFileStoragePath
+	}
+	cfg.Restore = flagRestore
+	cfg.UseFileStorage = flagUseFileStorage
+	if flagMigrationsPath != "" {
+		cfg.MigrationsPath = flagMigrationsPath
+	}
+	log.Infof("config: %+v", cfg)
+	return cfg.Address, cfg.DatabaseDSN, cfg.StoreInterval, cfg.FileStoragePath, cfg.Restore
 }
