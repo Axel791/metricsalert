@@ -41,26 +41,32 @@ func main() {
 
 	addr, databaseDSN, storeIntervalFlag, filePathFlag, restoreFlag := config.ParseFlags(cfg)
 
-	log.Infof("flags: %s %s", addr, databaseDSN)
+	cfg.Address = addr
+	cfg.DatabaseDSN = databaseDSN
+	cfg.StoreInterval = storeIntervalFlag
+	cfg.FileStoragePath = filePathFlag
+	cfg.Restore = restoreFlag
 
-	if !validators.IsValidAddress(addr, false) {
-		log.Fatalf("invalid address: %s\n", addr)
+	log.Infof("Flags/Env final: ADDRESS=%s, DATABASE_DSN=%s", cfg.Address, cfg.DatabaseDSN)
+
+	if !validators.IsValidAddress(cfg.Address, false) {
+		log.Fatalf("invalid address: %s\n", cfg.Address)
 	}
-	dbConn, err := db.ConnectDB(databaseDSN, cfg)
+
+	dbConn, err := db.ConnectDB(cfg.DatabaseDSN, cfg)
 	if err != nil {
 		log.Fatalf("error connecting to database: %v", err)
 	}
 
 	router := chi.NewRouter()
-
 	router.Use(serverMiddleware.WithLogging)
 	router.Use(serverMiddleware.GzipMiddleware)
 	router.Use(middleware.StripSlashes)
 
 	opts := repositories.StoreOptions{
-		FilePath:        filePathFlag,
-		RestoreFromFile: restoreFlag,
-		StoreInterval:   time.Duration(storeIntervalFlag) * time.Second,
+		FilePath:        cfg.FileStoragePath,
+		RestoreFromFile: cfg.Restore,
+		StoreInterval:   time.Duration(cfg.StoreInterval) * time.Second,
 		UseFileStore:    cfg.UseFileStorage,
 	}
 
@@ -68,7 +74,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("error creating storage: %v", err)
 	}
-
 	metricsService := services.NewMetricsService(storage)
 
 	// Актуальные маршруты
@@ -99,7 +104,7 @@ func main() {
 	router.Method(
 		http.MethodGet,
 		"/ping",
-		handlers.NewDatabaseHealthCheckHandler(databaseDSN),
+		handlers.NewDatabaseHealthCheckHandler(cfg.DatabaseDSN),
 	)
 
 	// Устаревшие маршруты
@@ -113,8 +118,9 @@ func main() {
 		"/value/{metricType}/{name}",
 		deprecated.NewGetMetricHandler(storage),
 	)
-	log.Infof("server started on %s", addr)
-	err = http.ListenAndServe(addr, router)
+
+	log.Infof("server started on %s", cfg.Address)
+	err = http.ListenAndServe(cfg.Address, router)
 	if err != nil {
 		log.Fatalf("error starting server: %v", err)
 	}
