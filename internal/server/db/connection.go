@@ -15,8 +15,6 @@ func ConnectDB(databaseDSN string, cfg *config.Config) (*sqlx.DB, error) {
 			return nil, err
 		}
 
-		defer db.Close()
-
 		err = appleMigration(db, cfg)
 		if err != nil {
 			return nil, err

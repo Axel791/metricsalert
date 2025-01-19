@@ -124,6 +124,9 @@ func main() {
 
 	log.Infof("server started on %s", cfg.Address)
 	err = http.ListenAndServe(cfg.Address, router)
+
+	dbConn.Close()
+
 	if err != nil {
 		log.Fatalf("error starting server: %v", err)
 	}
