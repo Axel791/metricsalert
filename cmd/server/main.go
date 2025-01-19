@@ -35,8 +35,6 @@ func main() {
 	val, ok := os.LookupEnv("DATABASE_DSN")
 	log.Infof("DEBUG: direct os.LookupEnv(\"DATABASE_DSN\") => ok=%v, val=%q", ok, val)
 
-	log.Infof("Command-line arguments: %v", os.Args)
-
 	cfg, err := config.ServerLoadConfig()
 	if err != nil {
 		log.Fatalf("error loading config: %v", err)
@@ -60,6 +58,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("error connecting to database: %v", err)
 	}
+	_ = dbConn.Close()
 
 	router := chi.NewRouter()
 	router.Use(serverMiddleware.WithLogging)
@@ -124,8 +123,6 @@ func main() {
 
 	log.Infof("server started on %s", cfg.Address)
 	err = http.ListenAndServe(cfg.Address, router)
-
-	dbConn.Close()
 
 	if err != nil {
 		log.Fatalf("error starting server: %v", err)
