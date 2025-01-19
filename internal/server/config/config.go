@@ -35,10 +35,15 @@ func ServerLoadConfig() (*Config, error) {
 		log.Infof("filed find file config set defoult value: %v", err)
 	}
 
+	rawDSN := viper.GetString("DATABASE_DSN")
+	log.Infof("DEBUG: viper.GetString(\"DATABASE_DSN\") => %q", rawDSN)
+
 	var cfg Config
 	if err := viper.Unmarshal(&cfg); err != nil {
 		return nil, err
 	}
+
+	log.Infof("DEBUG: cfg.DatabaseDSN after Unmarshal => %q", cfg.DatabaseDSN)
 
 	return &cfg, nil
 }

@@ -26,13 +26,16 @@ import (
 func main() {
 	log := logrus.New()
 
-	log.Infof("Command-line arguments: %v", os.Args)
-
 	log.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp:   true,
 		TimestampFormat: "2006-01-02 15:04:05",
 	})
 	log.SetLevel(logrus.InfoLevel)
+
+	val, ok := os.LookupEnv("DATABASE_DSN")
+	log.Infof("DEBUG: direct os.LookupEnv(\"DATABASE_DSN\") => ok=%v, val=%q", ok, val)
+
+	log.Infof("Command-line arguments: %v", os.Args)
 
 	cfg, err := config.ServerLoadConfig()
 	if err != nil {
