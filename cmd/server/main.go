@@ -58,7 +58,6 @@ func main() {
 	if err != nil {
 		log.Fatalf("error connecting to database: %v", err)
 	}
-	_ = dbConn.Close()
 
 	router := chi.NewRouter()
 	router.Use(serverMiddleware.WithLogging)
