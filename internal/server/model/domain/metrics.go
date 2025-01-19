@@ -12,10 +12,10 @@ const (
 )
 
 type Metrics struct {
-	ID    string
-	MType string
-	Delta null.Int
-	Value null.Float
+	ID    string     `db:"id"`
+	MType string     `db:"metric_type"`
+	Delta null.Int   `db:"delta"`
+	Value null.Float `db:"value"`
 }
 
 func (m *Metrics) ValidateMetricsType() error {
