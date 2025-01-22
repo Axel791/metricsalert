@@ -18,7 +18,6 @@ func NewGetMetricsHTMLHandler(metricService services.Metric) *GetMetricsHTMLHand
 
 func (h *GetMetricsHTMLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	metrics, err := h.metricService.GetAllMetric(r.Context())
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
