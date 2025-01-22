@@ -21,7 +21,8 @@ func (r *MetricMapRepositoryHandler) UpdateGauge(_ context.Context, name string,
 		metric.Value = null.FloatFrom(value)
 	} else {
 		metric = domain.Metrics{
-			ID:    name,
+			ID:    0,
+			Name:  name,
 			MType: domain.Gauge,
 			Value: null.FloatFrom(value),
 		}
@@ -36,7 +37,8 @@ func (r *MetricMapRepositoryHandler) UpdateCounter(_ context.Context, name strin
 		metric.Delta = null.IntFrom(metric.Delta.Int64 + value)
 	} else {
 		metric = domain.Metrics{
-			ID:    name,
+			ID:    0,
+			Name:  name,
 			MType: domain.Counter,
 			Delta: null.IntFrom(value),
 		}
@@ -46,7 +48,7 @@ func (r *MetricMapRepositoryHandler) UpdateCounter(_ context.Context, name strin
 }
 
 func (r *MetricMapRepositoryHandler) GetMetric(_ context.Context, metricsDomain domain.Metrics) (domain.Metrics, error) {
-	if metric, exists := r.metrics[metricsDomain.ID]; exists {
+	if metric, exists := r.metrics[metricsDomain.Name]; exists {
 		return metric, nil
 	}
 	return domain.Metrics{}, nil
@@ -60,17 +62,17 @@ func (r *MetricMapRepositoryHandler) BatchUpdateMetrics(_ context.Context, metri
 	for _, metric := range metrics {
 		switch metric.MType {
 		case domain.Gauge:
-			_, err := r.UpdateGauge(context.Background(), metric.ID, metric.Value.Float64)
+			_, err := r.UpdateGauge(context.Background(), metric.Name, metric.Value.Float64)
 			if err != nil {
-				return fmt.Errorf("failed to update gauge metric %s: %w", metric.ID, err)
+				return fmt.Errorf("failed to update gauge metric %s: %w", metric.Name, err)
 			}
 		case domain.Counter:
-			_, err := r.UpdateCounter(context.Background(), metric.ID, metric.Delta.Int64)
+			_, err := r.UpdateCounter(context.Background(), metric.Name, metric.Delta.Int64)
 			if err != nil {
-				return fmt.Errorf("failed to update counter metric %s: %w", metric.ID, err)
+				return fmt.Errorf("failed to update counter metric %s: %w", metric.Name, err)
 			}
 		default:
-			return fmt.Errorf("unknown metric type %s for metric %s", metric.MType, metric.ID)
+			return fmt.Errorf("unknown metric type %s for metric %s", metric.MType, metric.Name)
 		}
 	}
 	return nil

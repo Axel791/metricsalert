@@ -25,7 +25,7 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 
 	metric := domain.Metrics{
-		ID:    name,
+		Name:  name,
 		MType: metricType,
 	}
 
@@ -46,7 +46,7 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if value.ID == "" {
+	if value.Name == "" {
 		log.Printf("GetMetricHandler: metric not found: %s (type: %s)", name, metricType)
 		http.Error(w, "metric not found", http.StatusNotFound)
 		return
