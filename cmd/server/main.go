@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/go-chi/chi/v5/middleware"
@@ -32,9 +31,6 @@ func main() {
 	})
 	log.SetLevel(logrus.InfoLevel)
 
-	val, ok := os.LookupEnv("DATABASE_DSN")
-	log.Infof("DEBUG: direct os.LookupEnv(\"DATABASE_DSN\") => ok=%v, val=%q", ok, val)
-
 	cfg, err := config.ServerLoadConfig()
 	if err != nil {
 		log.Fatalf("error loading config: %v", err)
@@ -47,8 +43,6 @@ func main() {
 	cfg.StoreInterval = storeIntervalFlag
 	cfg.FileStoragePath = filePathFlag
 	cfg.Restore = restoreFlag
-
-	log.Infof("Flags/Env final: ADDRESS=%s, DATABASE_DSN=%s", cfg.Address, cfg.DatabaseDSN)
 
 	if !validators.IsValidAddress(cfg.Address, false) {
 		log.Fatalf("invalid address: %s\n", cfg.Address)

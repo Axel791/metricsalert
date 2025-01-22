@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/pkg/errors"
 
 	log "github.com/sirupsen/logrus"
 
@@ -51,9 +52,8 @@ func (fs *FileStoreHandler) UpdateGauge(ctx context.Context, name string, value 
 	defer fs.mutex.Unlock()
 
 	metric, err := fs.memoryStore.UpdateGauge(ctx, name, value)
-
 	if err != nil {
-		return domain.Metrics{}, errors.New(fmt.Sprintf("failed to update counter %q: %v", name, err))
+		return domain.Metrics{}, fmt.Errorf("failed to update counter %q: %v", name, err)
 	}
 
 	_ = fs.saveToFile(ctx)

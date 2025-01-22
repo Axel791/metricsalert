@@ -55,39 +55,39 @@ func (ms *MetricsService) GetMetric(ctx context.Context, metricType, name string
 }
 
 // CreateOrUpdateMetric - создаёт или обновляет метрику.
-func (ms *MetricsService) CreateOrUpdateMetric(ctx context.Context, metricApi api.Metrics) (dto.Metrics, error) {
+func (ms *MetricsService) CreateOrUpdateMetric(ctx context.Context, metricAPI api.Metrics) (dto.Metrics, error) {
 	var metricsDTO dto.Metrics
 
-	if metricApi.ID == "" {
+	if metricAPI.ID == "" {
 		return metricsDTO, errors.New("metric name (ID) is required")
 	}
 
-	if metricApi.MType != domain.Counter && metricApi.MType != domain.Gauge {
-		return metricsDTO, fmt.Errorf("invalid metric type: %s", metricApi.MType)
+	if metricAPI.MType != domain.Counter && metricAPI.MType != domain.Gauge {
+		return metricsDTO, fmt.Errorf("invalid metric type: %s", metricAPI.MType)
 	}
 
-	switch metricApi.MType {
+	switch metricAPI.MType {
 	case domain.Counter:
-		if metricApi.Delta == nil {
-			return metricsDTO, fmt.Errorf("missing delta for counter '%s'", metricApi.ID)
+		if metricAPI.Delta == nil {
+			return metricsDTO, fmt.Errorf("missing delta for counter '%s'", metricAPI.ID)
 		}
 	case domain.Gauge:
-		if metricApi.Value == nil {
-			return metricsDTO, fmt.Errorf("missing value for gauge '%s'", metricApi.ID)
+		if metricAPI.Value == nil {
+			return metricsDTO, fmt.Errorf("missing value for gauge '%s'", metricAPI.ID)
 		}
 	}
 
 	metric := domain.Metrics{
-		Name:  metricApi.ID,
-		MType: metricApi.MType,
+		Name:  metricAPI.ID,
+		MType: metricAPI.MType,
 	}
 
-	if metricApi.MType == domain.Counter {
-		if err := metric.SetMetricValue(*metricApi.Delta); err != nil {
+	if metricAPI.MType == domain.Counter {
+		if err := metric.SetMetricValue(*metricAPI.Delta); err != nil {
 			return metricsDTO, err
 		}
 	} else {
-		if err := metric.SetMetricValue(*metricApi.Value); err != nil {
+		if err := metric.SetMetricValue(*metricAPI.Value); err != nil {
 			return metricsDTO, err
 		}
 	}
