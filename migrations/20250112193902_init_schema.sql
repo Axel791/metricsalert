@@ -1,10 +1,12 @@
 -- +goose Up
 -- +goose StatementBegin
 CREATE TABLE metrics (
-    id TEXT PRIMARY KEY,
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
     metric_type VARCHAR(10) NOT NULL CHECK (metric_type IN ('gauge', 'counter')),
     value DOUBLE PRECISION,
-    delta BIGINT
+    delta BIGINT,
+    UNIQUE (name, metric_type)
 );
 -- +goose StatementEnd
 

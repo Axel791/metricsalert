@@ -32,7 +32,7 @@ func (r *MetricsRepositoryHandler) UpdateGauge(ctx context.Context, name string,
 
 	err := db.RetryOperation(func() error {
 		metric := domain.Metrics{
-			ID:    name,
+			Name:  name,
 			MType: domain.Gauge,
 			Value: null.FloatFrom(value),
 			Delta: null.Int{},
@@ -40,27 +40,24 @@ func (r *MetricsRepositoryHandler) UpdateGauge(ctx context.Context, name string,
 
 		query, args, err := cursor.
 			Insert("metrics").
-			Columns("id", "metric_type", "value", "delta").
-			Values(metric.ID, metric.MType, metric.Value, nil).
+			Columns("name", "metric_type", "value", "delta").
+			Values(metric.Name, metric.MType, metric.Value, nil).
 			Suffix(`
-				ON CONFLICT (id) 
-				DO UPDATE SET
-					metric_type = EXCLUDED.metric_type,
-					value       = EXCLUDED.value,
-					delta       = NULL
-			`).
+                ON CONFLICT (name, metric_type)
+                DO UPDATE SET
+                    value = EXCLUDED.value,
+                    delta = NULL
+                RETURNING id, name, metric_type, value, delta
+            `).
 			ToSql()
-
 		if err != nil {
 			return fmt.Errorf("building upsert gauge query: %w", err)
 		}
 
-		_, execErr := r.db.ExecContext(ctx, query, args...)
-		if execErr != nil {
-			return fmt.Errorf("exec upsert gauge query: %w", execErr)
+		if err := r.db.QueryRowxContext(ctx, query, args...).StructScan(&result); err != nil {
+			return fmt.Errorf("exec upsert gauge query: %w", err)
 		}
 
-		result = metric
 		return nil
 	})
 
@@ -73,7 +70,7 @@ func (r *MetricsRepositoryHandler) UpdateCounter(ctx context.Context, name strin
 
 	err := db.RetryOperation(func() error {
 		metric := domain.Metrics{
-			ID:    name,
+			Name:  name,
 			MType: domain.Counter,
 			Delta: null.IntFrom(value),
 			Value: null.Float{},
@@ -81,26 +78,24 @@ func (r *MetricsRepositoryHandler) UpdateCounter(ctx context.Context, name strin
 
 		query, args, err := cursor.
 			Insert("metrics").
-			Columns("id", "metric_type", "delta", "value").
-			Values(metric.ID, metric.MType, metric.Delta, nil).
+			Columns("name", "metric_type", "delta", "value").
+			Values(metric.Name, metric.MType, metric.Delta, nil).
 			Suffix(`
-				ON CONFLICT (id) 
-				DO UPDATE SET
-					metric_type = EXCLUDED.metric_type,
-					delta       = metrics.delta + EXCLUDED.delta,
-					value       = NULL
-			`).
+                ON CONFLICT (name, metric_type)
+                DO UPDATE SET
+                    delta = metrics.delta + EXCLUDED.delta,
+                    value = NULL
+                RETURNING id, name, metric_type, value, delta
+            `).
 			ToSql()
 		if err != nil {
 			return fmt.Errorf("building upsert counter query: %w", err)
 		}
 
-		_, execErr := r.db.ExecContext(ctx, query, args...)
-		if execErr != nil {
-			return fmt.Errorf("exec upsert counter query: %w", execErr)
+		if err := r.db.QueryRowxContext(ctx, query, args...).StructScan(&result); err != nil {
+			return fmt.Errorf("exec upsert counter query: %w", err)
 		}
 
-		result = metric
 		return nil
 	})
 
@@ -113,9 +108,9 @@ func (r *MetricsRepositoryHandler) GetMetric(ctx context.Context, metric domain.
 
 	err := db.RetryOperation(func() error {
 		query, args, err := cursor.
-			Select("id", "metric_type", "value", "delta").
+			Select("id", "name", "metric_type", "value", "delta").
 			From("metrics").
-			Where(sq.Eq{"id": metric.ID}).
+			Where(sq.Eq{"name": metric.Name, "metric_type": metric.MType}).
 			Limit(1).
 			ToSql()
 		if err != nil {
@@ -139,7 +134,7 @@ func (r *MetricsRepositoryHandler) GetAllMetrics(ctx context.Context) (map[strin
 
 	err := db.RetryOperation(func() error {
 		query, args, err := cursor.
-			Select("id", "metric_type", "value", "delta").
+			Select("id", "name", "metric_type", "value", "delta").
 			From("metrics").
 			ToSql()
 		if err != nil {
@@ -157,7 +152,8 @@ func (r *MetricsRepositoryHandler) GetAllMetrics(ctx context.Context) (map[strin
 			if scanErr := rows.StructScan(&m); scanErr != nil {
 				return fmt.Errorf("scan metric row: %w", scanErr)
 			}
-			metricsMap[m.ID] = m
+
+			metricsMap[m.Name] = m
 		}
 
 		return nil
@@ -170,10 +166,10 @@ func (r *MetricsRepositoryHandler) GetAllMetrics(ctx context.Context) (map[strin
 func (r *MetricsRepositoryHandler) BatchUpdateMetrics(ctx context.Context, metrics []domain.Metrics) error {
 	return db.RetryOperation(func() error {
 		insertBuilder := cursor.Insert("metrics").
-			Columns("id", "metric_type", "value", "delta")
+			Columns("name", "metric_type", "value", "delta")
 
 		for _, metric := range metrics {
-			insertBuilder = insertBuilder.Values(metric.ID, metric.MType, metric.Value, metric.Delta)
+			insertBuilder = insertBuilder.Values(metric.Name, metric.MType, metric.Value, metric.Delta)
 		}
 
 		sql, args, err := insertBuilder.ToSql()
@@ -182,15 +178,15 @@ func (r *MetricsRepositoryHandler) BatchUpdateMetrics(ctx context.Context, metri
 		}
 
 		sql += `
-			ON CONFLICT (id)
-			DO UPDATE SET
-				metric_type = EXCLUDED.metric_type,
-				value = EXCLUDED.value,
-				delta = CASE 
-					WHEN EXCLUDED.metric_type = 'Counter' THEN metrics.delta + EXCLUDED.delta
-					ELSE EXCLUDED.delta
-				END
-		`
+            ON CONFLICT (name, metric_type)
+            DO UPDATE SET
+                value = EXCLUDED.value,
+                delta = CASE
+                    WHEN EXCLUDED.metric_type = 'counter'
+                        THEN metrics.delta + EXCLUDED.delta
+                    ELSE EXCLUDED.delta
+                END
+        `
 
 		if _, err := r.db.ExecContext(ctx, sql, args...); err != nil {
 			return fmt.Errorf("cannot exec batch upsert: %w", err)
