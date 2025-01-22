@@ -40,7 +40,6 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	value, err := h.storage.GetMetric(r.Context(), metric)
-
 	if err != nil {
 		http.Error(w, fmt.Sprintf("error get metric: %v", err), http.StatusInternalServerError)
 		return

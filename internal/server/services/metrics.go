@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/Axel791/metricsalert/internal/server/model/api"
 	"github.com/Axel791/metricsalert/internal/server/model/domain"
 	"github.com/Axel791/metricsalert/internal/server/model/dto"
@@ -199,7 +200,6 @@ func (ms *MetricsService) BatchMetricsUpdate(ctx context.Context, metrics []api.
 		key := m.Name + ":" + m.MType
 
 		if existing, ok := uniqMap[key]; ok {
-
 			if m.MType == "counter" {
 				existing.Delta.Int64 += m.Delta.Int64
 				uniqMap[key] = existing

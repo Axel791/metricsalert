@@ -8,8 +8,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pkg/errors"
-
 	log "github.com/sirupsen/logrus"
 
 	"github.com/Axel791/metricsalert/internal/server/model/domain"
@@ -170,7 +168,7 @@ func (fs *FileStoreHandler) saveToFile(ctx context.Context) error {
 
 	data, err := fs.memoryStore.GetAllMetrics(ctx)
 	if err != nil {
-		return errors.New(fmt.Sprintf("failed to get all metrics: %v", err))
+		return fmt.Errorf("failed to get all metrics: %v", err)
 	}
 	return json.NewEncoder(file).Encode(data)
 }
