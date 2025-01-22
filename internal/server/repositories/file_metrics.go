@@ -67,7 +67,7 @@ func (fs *FileStoreHandler) UpdateCounter(ctx context.Context, name string, valu
 
 	metric, err := fs.memoryStore.UpdateCounter(ctx, name, value)
 	if err != nil {
-		return domain.Metrics{}, errors.New(fmt.Sprintf("failed to update counter %q: %v", name, err))
+		return domain.Metrics{}, fmt.Errorf("failed to update counter %q: %v", name, err)
 	}
 	_ = fs.saveToFile(ctx)
 	return metric, nil
@@ -77,7 +77,7 @@ func (fs *FileStoreHandler) UpdateCounter(ctx context.Context, name string, valu
 func (fs *FileStoreHandler) GetMetric(ctx context.Context, metricsDomain domain.Metrics) (domain.Metrics, error) {
 	metric, err := fs.memoryStore.GetMetric(ctx, metricsDomain)
 	if err != nil {
-		return domain.Metrics{}, errors.New(fmt.Sprintf("failed to get metric %s: %v", metricsDomain.Name, err))
+		return domain.Metrics{}, fmt.Errorf("failed to get metric %s: %v", metricsDomain.Name, err)
 	}
 	return metric, nil
 }
@@ -121,13 +121,13 @@ func (fs *FileStoreHandler) load(ctx context.Context) error {
 		case domain.Counter:
 			_, err := fs.memoryStore.UpdateCounter(ctx, name, metric.Delta.Int64)
 			if err != nil {
-				return errors.New(fmt.Sprintf("failed to update metric %q: %v", name, err))
+				return fmt.Errorf("failed to update metric %q: %v", name, err)
 			}
 		case domain.Gauge:
 
 			_, err := fs.memoryStore.UpdateGauge(ctx, name, metric.Value.Float64)
 			if err != nil {
-				return errors.New(fmt.Sprintf("failed to update metric %q: %v", name, err))
+				return fmt.Errorf("failed to update metric %q: %v", name, err)
 			}
 		}
 	}

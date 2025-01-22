@@ -3,17 +3,17 @@ package repositories
 import (
 	"context"
 	"fmt"
-	"github.com/Axel791/metricsalert/internal/server/db"
 	"strings"
 
-	"github.com/Axel791/metricsalert/internal/server/model/domain"
+	"github.com/Axel791/metricsalert/internal/server/db"
+
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
+
+	"github.com/Axel791/metricsalert/internal/server/model/domain"
 )
 
-var (
-	cursor = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
-)
+var cursor = sq.StatementBuilder.PlaceholderFormat(sq.Dollar)
 
 // MetricsRepositoryHandler хранит ссылку на БД.
 type MetricsRepositoryHandler struct {

@@ -2,8 +2,9 @@ package repositories
 
 import (
 	"context"
-	"github.com/jmoiron/sqlx"
 	"time"
+
+	"github.com/jmoiron/sqlx"
 
 	"github.com/Axel791/metricsalert/internal/server/model/domain"
 )

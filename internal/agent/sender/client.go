@@ -113,39 +113,6 @@ func (client *MetricClient) sendMetricsBatch(metricsList []api.MetricPost) error
 	return nil
 }
 
-func (client *MetricClient) sendMetric(metric api.MetricPost) error {
-	body, err := json.Marshal(metric)
-	if err != nil {
-		return fmt.Errorf("failed to marshal metric: %w", err)
-	}
-
-	compressedBody, err := compressData(body)
-	if err != nil {
-		return fmt.Errorf("failed to compress data: %w", err)
-	}
-
-	headers := http.Header{}
-	headers.Set("Content-Type", "application/json")
-	headers.Set("Content-Encoding", "gzip")
-
-	u, err := url.Parse(fmt.Sprintf("%s/update", client.baseURL))
-	if err != nil {
-		return fmt.Errorf("failed to parse URL: %w", err)
-	}
-
-	rsp, err := client.httpClient.Post(u.String(), bytes.NewBuffer(compressedBody), headers)
-	if err != nil {
-		return fmt.Errorf("failed to send metrics %s: %w", metric.ID, err)
-	}
-	defer rsp.Body.Close()
-
-	if rsp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status code: %d", rsp.StatusCode)
-	}
-
-	return nil
-}
-
 func (client *MetricClient) healthCheck() error {
 	u, err := url.Parse(fmt.Sprintf("%s/healthcheck", client.baseURL))
 	if err != nil {

@@ -2,8 +2,9 @@ package handlers
 
 import (
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/Axel791/metricsalert/internal/server/model/api"
 	"github.com/Axel791/metricsalert/internal/server/services"
