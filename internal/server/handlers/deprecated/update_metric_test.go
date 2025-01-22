@@ -48,7 +48,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 				mockStore.
 					On("UpdateGauge", mock.Anything, "testMetric", 123.45).
 					Return(domain.Metrics{
-						ID:    "testMetric",
+						Name:  "testMetric",
 						MType: Gauge,
 						Value: null.NewFloat(123.45, true),
 					}, nil).
@@ -64,7 +64,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 				mockStore.
 					On("UpdateCounter", mock.Anything, "testMetric", int64(10)).
 					Return(domain.Metrics{
-						ID:    "testMetric",
+						Name:  "testMetric",
 						MType: Counter,
 						Delta: null.NewInt(10, true),
 					}, nil).
