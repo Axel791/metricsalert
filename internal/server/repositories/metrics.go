@@ -161,9 +161,9 @@ func (r *MetricsRepositoryHandler) BatchUpdateMetrics(ctx context.Context, metri
 	return db.RetryOperation(func() error {
 		var sb strings.Builder
 		sb.WriteString(`
-			WITH input (name, metric_type, val, delt) AS (
-				VALUES
-			`)
+WITH input (name, metric_type, val, delt) AS (
+    VALUES
+`)
 
 		args := make([]interface{}, 0, len(metrics)*4)
 
@@ -172,52 +172,60 @@ func (r *MetricsRepositoryHandler) BatchUpdateMetrics(ctx context.Context, metri
 				sb.WriteString(",")
 			}
 			placeholderStart := len(args) + 1
-			sb.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d)", placeholderStart, placeholderStart+1, placeholderStart+2, placeholderStart+3))
-			args = append(args, m.Name, m.MType, m.Value.Float64, m.Delta.Int64)
+			sb.WriteString(fmt.Sprintf(
+				"($%d::text, $%d::text, $%d::double precision, $%d::bigint)",
+				placeholderStart, placeholderStart+1, placeholderStart+2, placeholderStart+3,
+			))
+
+			args = append(args,
+				m.Name,
+				m.MType,
+				m.Value.Float64,
+				m.Delta.Int64,
+			)
 		}
 
 		sb.WriteString(`
-			),
-			updated AS (
-				UPDATE metrics mt
-				SET
-					value = CASE
-						WHEN i.metric_type = 'gauge' THEN i.val
-						ELSE NULL
-					END,
-					delta = CASE
-						WHEN i.metric_type = 'counter' THEN mt.delta + i.delt
-						ELSE i.delt
-					END
-				FROM input i
-				WHERE mt.name = i.name
-				  AND mt.metric_type = i.metric_type
-				RETURNING mt.*
-			),
-			inserted AS (
-				INSERT INTO metrics (name, metric_type, value, delta)
-				SELECT
-					i.name,
-					i.metric_type,
-					CASE WHEN i.metric_type = 'gauge' THEN i.val ELSE NULL END,
-					CASE WHEN i.metric_type = 'counter' THEN i.delt ELSE NULL END
-				FROM input i
-				WHERE NOT EXISTS (
-					SELECT 1 FROM updated u
-					WHERE u.name = i.name
-					  AND u.metric_type = i.metric_type
-				)
-				RETURNING *
-			)
-			SELECT 1 FROM updated
-			UNION ALL
-			SELECT 1 FROM inserted
-			`)
+),
+updated AS (
+    UPDATE metrics mt
+    SET
+        value = CASE
+            WHEN i.metric_type = 'gauge' THEN i.val
+            ELSE NULL
+        END,
+        delta = CASE
+            WHEN i.metric_type = 'counter' THEN mt.delta + i.delt
+            ELSE i.delt
+        END
+    FROM input i
+    WHERE mt.name = i.name
+      AND mt.metric_type = i.metric_type
+    RETURNING mt.*
+),
+inserted AS (
+    INSERT INTO metrics (name, metric_type, value, delta)
+    SELECT
+        i.name,
+        i.metric_type,
+        CASE WHEN i.metric_type = 'gauge' THEN i.val ELSE NULL END,
+        CASE WHEN i.metric_type = 'counter' THEN i.delt ELSE NULL END
+    FROM input i
+    WHERE NOT EXISTS (
+        SELECT 1 FROM updated u
+        WHERE u.name = i.name
+          AND u.metric_type = i.metric_type
+    )
+    RETURNING *
+)
+SELECT 1 FROM updated
+UNION ALL
+SELECT 1 FROM inserted
+`)
 
 		cteSQL := sb.String()
 
-		_, err := r.db.ExecContext(ctx, cteSQL, args...)
-		if err != nil {
+		if _, err := r.db.ExecContext(ctx, cteSQL, args...); err != nil {
 			return fmt.Errorf("BatchUpdateMetrics CTE error: %w", err)
 		}
 
