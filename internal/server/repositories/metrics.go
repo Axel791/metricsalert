@@ -4,12 +4,11 @@ import (
 	"context"
 	"fmt"
 	"github.com/Axel791/metricsalert/internal/server/db"
-
-	sq "github.com/Masterminds/squirrel"
-	"github.com/jmoiron/sqlx"
-	"gopkg.in/guregu/null.v4"
+	"strings"
 
 	"github.com/Axel791/metricsalert/internal/server/model/domain"
+	sq "github.com/Masterminds/squirrel"
+	"github.com/jmoiron/sqlx"
 )
 
 var (
@@ -27,73 +26,65 @@ func NewMetricRepository(db *sqlx.DB) *MetricsRepositoryHandler {
 }
 
 // UpdateGauge - обновление Gauge.
-func (r *MetricsRepositoryHandler) UpdateGauge(ctx context.Context, name string, value float64) (domain.Metrics, error) {
+func (r *MetricsRepositoryHandler) UpdateGauge(ctx context.Context, name string, gaugeVal float64) (domain.Metrics, error) {
 	var result domain.Metrics
 
 	err := db.RetryOperation(func() error {
-		metric := domain.Metrics{
-			Name:  name,
-			MType: domain.Gauge,
-			Value: null.FloatFrom(value),
-			Delta: null.Int{},
-		}
+		cteSQL := `
+			WITH updated AS (
+				UPDATE metrics
+				SET value = $2,
+					delta = NULL
+				WHERE name = $1
+				  AND metric_type = 'gauge'
+				RETURNING id, name, metric_type, value, delta
+			),
+			inserted AS (
+				INSERT INTO metrics (name, metric_type, value, delta)
+				SELECT $1, 'gauge', $2, NULL
+				WHERE NOT EXISTS (SELECT 1 FROM updated)
+				RETURNING id, name, metric_type, value, delta
+			)
+			SELECT * FROM updated
+			UNION ALL
+			SELECT * FROM inserted
+		`
 
-		query, args, err := cursor.
-			Insert("metrics").
-			Columns("name", "metric_type", "value", "delta").
-			Values(metric.Name, metric.MType, metric.Value, nil).
-			Suffix(`
-                ON CONFLICT (name, metric_type)
-                DO UPDATE SET
-                    value = EXCLUDED.value,
-                    delta = NULL
-                RETURNING id, name, metric_type, value, delta
-            `).
-			ToSql()
-		if err != nil {
-			return fmt.Errorf("building upsert gauge query: %w", err)
+		if err := r.db.QueryRowxContext(ctx, cteSQL, name, gaugeVal).StructScan(&result); err != nil {
+			return fmt.Errorf("UpdateGauge CTE error: %w", err)
 		}
-
-		if err := r.db.QueryRowxContext(ctx, query, args...).StructScan(&result); err != nil {
-			return fmt.Errorf("exec upsert gauge query: %w", err)
-		}
-
 		return nil
 	})
 
 	return result, err
 }
 
-// UpdateCounter - обновление counter
 func (r *MetricsRepositoryHandler) UpdateCounter(ctx context.Context, name string, value int64) (domain.Metrics, error) {
 	var result domain.Metrics
 
 	err := db.RetryOperation(func() error {
-		metric := domain.Metrics{
-			Name:  name,
-			MType: domain.Counter,
-			Delta: null.IntFrom(value),
-			Value: null.Float{},
-		}
+		cteSQL := `
+			WITH updated AS (
+				UPDATE metrics
+				SET delta = metrics.delta + $2,
+					value = NULL
+				WHERE name = $1
+				  AND metric_type = 'counter'
+				RETURNING id, name, metric_type, value, delta
+			),
+			inserted AS (
+				INSERT INTO metrics (name, metric_type, delta, value)
+				SELECT $1, 'counter', $2, NULL
+				WHERE NOT EXISTS (SELECT 1 FROM updated)
+				RETURNING id, name, metric_type, value, delta
+			)
+			SELECT * FROM updated
+			UNION ALL
+			SELECT * FROM inserted
+			`
 
-		query, args, err := cursor.
-			Insert("metrics").
-			Columns("name", "metric_type", "delta", "value").
-			Values(metric.Name, metric.MType, metric.Delta, nil).
-			Suffix(`
-                ON CONFLICT (name, metric_type)
-                DO UPDATE SET
-                    delta = metrics.delta + EXCLUDED.delta,
-                    value = NULL
-                RETURNING id, name, metric_type, value, delta
-            `).
-			ToSql()
-		if err != nil {
-			return fmt.Errorf("building upsert counter query: %w", err)
-		}
-
-		if err := r.db.QueryRowxContext(ctx, query, args...).StructScan(&result); err != nil {
-			return fmt.Errorf("exec upsert counter query: %w", err)
+		if err := r.db.QueryRowxContext(ctx, cteSQL, name, value).StructScan(&result); err != nil {
+			return fmt.Errorf("UpdateCounter CTE error: %w", err)
 		}
 
 		return nil
@@ -162,34 +153,72 @@ func (r *MetricsRepositoryHandler) GetAllMetrics(ctx context.Context) (map[strin
 	return metricsMap, err
 }
 
-// BatchUpdateMetrics - обновление метрик батчами
 func (r *MetricsRepositoryHandler) BatchUpdateMetrics(ctx context.Context, metrics []domain.Metrics) error {
+	if len(metrics) == 0 {
+		return nil
+	}
+
 	return db.RetryOperation(func() error {
-		insertBuilder := cursor.Insert("metrics").
-			Columns("name", "metric_type", "value", "delta")
+		var sb strings.Builder
+		sb.WriteString(`
+			WITH input (name, metric_type, val, delt) AS (
+				VALUES
+			`)
 
-		for _, metric := range metrics {
-			insertBuilder = insertBuilder.Values(metric.Name, metric.MType, metric.Value, metric.Delta)
+		args := make([]interface{}, 0, len(metrics)*4)
+
+		for i, m := range metrics {
+			if i > 0 {
+				sb.WriteString(",")
+			}
+			placeholderStart := len(args) + 1
+			sb.WriteString(fmt.Sprintf("($%d, $%d, $%d, $%d)", placeholderStart, placeholderStart+1, placeholderStart+2, placeholderStart+3))
+			args = append(args, m.Name, m.MType, m.Value.Float64, m.Delta.Int64)
 		}
 
-		sql, args, err := insertBuilder.ToSql()
+		sb.WriteString(`
+			),
+			updated AS (
+				UPDATE metrics mt
+				SET
+					value = CASE
+						WHEN i.metric_type = 'gauge' THEN i.val
+						ELSE NULL
+					END,
+					delta = CASE
+						WHEN i.metric_type = 'counter' THEN mt.delta + i.delt
+						ELSE i.delt
+					END
+				FROM input i
+				WHERE mt.name = i.name
+				  AND mt.metric_type = i.metric_type
+				RETURNING mt.*
+			),
+			inserted AS (
+				INSERT INTO metrics (name, metric_type, value, delta)
+				SELECT
+					i.name,
+					i.metric_type,
+					CASE WHEN i.metric_type = 'gauge' THEN i.val ELSE NULL END,
+					CASE WHEN i.metric_type = 'counter' THEN i.delt ELSE NULL END
+				FROM input i
+				WHERE NOT EXISTS (
+					SELECT 1 FROM updated u
+					WHERE u.name = i.name
+					  AND u.metric_type = i.metric_type
+				)
+				RETURNING *
+			)
+			SELECT 1 FROM updated
+			UNION ALL
+			SELECT 1 FROM inserted
+			`)
+
+		cteSQL := sb.String()
+
+		_, err := r.db.ExecContext(ctx, cteSQL, args...)
 		if err != nil {
-			return fmt.Errorf("cannot build insert query: %w", err)
-		}
-
-		sql += `
-            ON CONFLICT (name, metric_type)
-            DO UPDATE SET
-                value = EXCLUDED.value,
-                delta = CASE
-                    WHEN EXCLUDED.metric_type = 'counter'
-                        THEN metrics.delta + EXCLUDED.delta
-                    ELSE EXCLUDED.delta
-                END
-        `
-
-		if _, err := r.db.ExecContext(ctx, sql, args...); err != nil {
-			return fmt.Errorf("cannot exec batch upsert: %w", err)
+			return fmt.Errorf("BatchUpdateMetrics CTE error: %w", err)
 		}
 
 		return nil
