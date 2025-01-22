@@ -158,34 +158,6 @@ func (r *MetricsRepositoryHandler) BatchUpdateMetrics(ctx context.Context, metri
 		return nil
 	}
 
-	dedupMap := make(map[string]domain.Metrics, len(metrics))
-
-	for _, m := range metrics {
-		key := m.Name + ":" + m.MType
-
-		if existing, ok := dedupMap[key]; ok {
-
-			if m.MType == "counter" {
-				existing.Delta.Int64 += m.Delta.Int64
-				dedupMap[key] = existing
-			} else if m.MType == "gauge" {
-				existing.Value.Float64 = m.Value.Float64
-				dedupMap[key] = existing
-			}
-		} else {
-			dedupMap[key] = m
-		}
-	}
-
-	dedupedMetrics := make([]domain.Metrics, 0, len(dedupMap))
-	for _, val := range dedupMap {
-		dedupedMetrics = append(dedupedMetrics, val)
-	}
-
-	if len(dedupedMetrics) == 0 {
-		return nil
-	}
-
 	return db.RetryOperation(func() error {
 		var sb strings.Builder
 
@@ -194,9 +166,9 @@ WITH input (name, metric_type, val, delt) AS (
     VALUES
 `)
 
-		args := make([]interface{}, 0, len(dedupedMetrics)*4)
+		args := make([]interface{}, 0, len(metrics)*4)
 
-		for i, m := range dedupedMetrics {
+		for i, m := range metrics {
 			if i > 0 {
 				sb.WriteString(",")
 			}
@@ -207,50 +179,50 @@ WITH input (name, metric_type, val, delt) AS (
 			))
 
 			args = append(args,
-				m.Name,          // $x::text
-				m.MType,         // $x::text
-				m.Value.Float64, // $x::double precision
-				m.Delta.Int64,   // $x::bigint
+				m.Name,
+				m.MType,
+				m.Value.Float64,
+				m.Delta.Int64,
 			)
 		}
 
 		sb.WriteString(`
-),
-updated AS (
-    UPDATE metrics mt
-    SET
-        value = CASE
-            WHEN i.metric_type = 'gauge' THEN i.val
-            ELSE NULL
-        END,
-        delta = CASE
-            WHEN i.metric_type = 'counter' THEN mt.delta + i.delt
-            ELSE i.delt
-        END
-    FROM input i
-    WHERE mt.name = i.name
-      AND mt.metric_type = i.metric_type
-    RETURNING mt.*
-),
-inserted AS (
-    INSERT INTO metrics (name, metric_type, value, delta)
-    SELECT
-        i.name,
-        i.metric_type,
-        CASE WHEN i.metric_type = 'gauge' THEN i.val ELSE NULL END,
-        CASE WHEN i.metric_type = 'counter' THEN i.delt ELSE NULL END
-    FROM input i
-    WHERE NOT EXISTS (
-        SELECT 1 FROM updated u
-        WHERE u.name = i.name
-          AND u.metric_type = i.metric_type
-    )
-    RETURNING *
-)
-SELECT 1 FROM updated
-UNION ALL
-SELECT 1 FROM inserted
-`)
+		),
+		updated AS (
+			UPDATE metrics mt
+			SET
+				value = CASE
+					WHEN i.metric_type = 'gauge' THEN i.val
+					ELSE NULL
+				END,
+				delta = CASE
+					WHEN i.metric_type = 'counter' THEN mt.delta + i.delt
+					ELSE i.delt
+				END
+			FROM input i
+			WHERE mt.name = i.name
+			  AND mt.metric_type = i.metric_type
+			RETURNING mt.*
+		),
+		inserted AS (
+			INSERT INTO metrics (name, metric_type, value, delta)
+			SELECT
+				i.name,
+				i.metric_type,
+				CASE WHEN i.metric_type = 'gauge' THEN i.val ELSE NULL END,
+				CASE WHEN i.metric_type = 'counter' THEN i.delt ELSE NULL END
+			FROM input i
+			WHERE NOT EXISTS (
+				SELECT 1 FROM updated u
+				WHERE u.name = i.name
+				  AND u.metric_type = i.metric_type
+			)
+			RETURNING *
+		)
+		SELECT 1 FROM updated
+		UNION ALL
+		SELECT 1 FROM inserted
+		`)
 
 		cteSQL := sb.String()
 

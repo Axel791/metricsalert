@@ -193,7 +193,31 @@ func (ms *MetricsService) BatchMetricsUpdate(ctx context.Context, metrics []api.
 		domainMetrics = append(domainMetrics, d)
 	}
 
-	if err := ms.store.BatchUpdateMetrics(ctx, domainMetrics); err != nil {
+	uniqMap := make(map[string]domain.Metrics, len(domainMetrics))
+
+	for _, m := range domainMetrics {
+		key := m.Name + ":" + m.MType
+
+		if existing, ok := uniqMap[key]; ok {
+
+			if m.MType == "counter" {
+				existing.Delta.Int64 += m.Delta.Int64
+				uniqMap[key] = existing
+			} else if m.MType == "gauge" {
+				existing.Value.Float64 = m.Value.Float64
+				uniqMap[key] = existing
+			}
+		} else {
+			uniqMap[key] = m
+		}
+	}
+
+	uniqMetrics := make([]domain.Metrics, 0, len(uniqMap))
+	for _, val := range uniqMap {
+		uniqMetrics = append(uniqMetrics, val)
+	}
+
+	if err := ms.store.BatchUpdateMetrics(ctx, uniqMetrics); err != nil {
 		return fmt.Errorf("BatchMetricsUpdate: error batch update failed: %v", err)
 	}
 	return nil
