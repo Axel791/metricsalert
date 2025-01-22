@@ -77,7 +77,7 @@ func (fs *FileStoreHandler) UpdateCounter(ctx context.Context, name string, valu
 func (fs *FileStoreHandler) GetMetric(ctx context.Context, metricsDomain domain.Metrics) (domain.Metrics, error) {
 	metric, err := fs.memoryStore.GetMetric(ctx, metricsDomain)
 	if err != nil {
-		return domain.Metrics{}, errors.New(fmt.Sprintf("failed to get metric %s: %v", metricsDomain.ID, err))
+		return domain.Metrics{}, errors.New(fmt.Sprintf("failed to get metric %s: %v", metricsDomain.Name, err))
 	}
 	return metric, nil
 }
