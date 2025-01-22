@@ -146,6 +146,9 @@ func (r *MetricsRepositoryHandler) GetAllMetrics(ctx context.Context) (map[strin
 
 			metricsMap[m.Name] = m
 		}
+		if err = rows.Err(); err != nil {
+			return fmt.Errorf("error during rows iteration: %w", err)
+		}
 
 		return nil
 	})
