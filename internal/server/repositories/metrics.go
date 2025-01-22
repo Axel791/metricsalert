@@ -158,16 +158,45 @@ func (r *MetricsRepositoryHandler) BatchUpdateMetrics(ctx context.Context, metri
 		return nil
 	}
 
+	dedupMap := make(map[string]domain.Metrics, len(metrics))
+
+	for _, m := range metrics {
+		key := m.Name + ":" + m.MType
+
+		if existing, ok := dedupMap[key]; ok {
+
+			if m.MType == "counter" {
+				existing.Delta.Int64 += m.Delta.Int64
+				dedupMap[key] = existing
+			} else if m.MType == "gauge" {
+				existing.Value.Float64 = m.Value.Float64
+				dedupMap[key] = existing
+			}
+		} else {
+			dedupMap[key] = m
+		}
+	}
+
+	dedupedMetrics := make([]domain.Metrics, 0, len(dedupMap))
+	for _, val := range dedupMap {
+		dedupedMetrics = append(dedupedMetrics, val)
+	}
+
+	if len(dedupedMetrics) == 0 {
+		return nil
+	}
+
 	return db.RetryOperation(func() error {
 		var sb strings.Builder
+
 		sb.WriteString(`
 WITH input (name, metric_type, val, delt) AS (
     VALUES
 `)
 
-		args := make([]interface{}, 0, len(metrics)*4)
+		args := make([]interface{}, 0, len(dedupedMetrics)*4)
 
-		for i, m := range metrics {
+		for i, m := range dedupedMetrics {
 			if i > 0 {
 				sb.WriteString(",")
 			}
@@ -178,10 +207,10 @@ WITH input (name, metric_type, val, delt) AS (
 			))
 
 			args = append(args,
-				m.Name,
-				m.MType,
-				m.Value.Float64,
-				m.Delta.Int64,
+				m.Name,          // $x::text
+				m.MType,         // $x::text
+				m.Value.Float64, // $x::double precision
+				m.Delta.Int64,   // $x::bigint
 			)
 		}
 
@@ -228,7 +257,6 @@ SELECT 1 FROM inserted
 		if _, err := r.db.ExecContext(ctx, cteSQL, args...); err != nil {
 			return fmt.Errorf("BatchUpdateMetrics CTE error: %w", err)
 		}
-
 		return nil
 	})
 }
