@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/Axel791/metricsalert/internal/db"
 	"net/http"
 	"time"
 
@@ -47,7 +48,7 @@ func main() {
 		log.Fatalf("invalid address: %s\n", cfg.Address)
 	}
 
-	dbConn, err := repositories.ConnectDB(cfg.DatabaseDSN, cfg)
+	dbConn, err := db.ConnectDB(cfg.DatabaseDSN, cfg)
 	if err != nil {
 		log.Fatalf("error connecting to database: %v", err)
 	}
