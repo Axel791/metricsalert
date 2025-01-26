@@ -10,7 +10,6 @@ import (
 	"github.com/Axel791/metricsalert/internal/server/handlers/deprecated"
 
 	"github.com/Axel791/metricsalert/internal/server/config"
-	"github.com/Axel791/metricsalert/internal/server/db"
 	"github.com/Axel791/metricsalert/internal/server/handlers"
 	serverMiddleware "github.com/Axel791/metricsalert/internal/server/middleware"
 	"github.com/Axel791/metricsalert/internal/server/repositories"
@@ -48,7 +47,7 @@ func main() {
 		log.Fatalf("invalid address: %s\n", cfg.Address)
 	}
 
-	dbConn, err := db.ConnectDB(cfg.DatabaseDSN, cfg)
+	dbConn, err := repositories.ConnectDB(cfg.DatabaseDSN, cfg)
 	if err != nil {
 		log.Fatalf("error connecting to database: %v", err)
 	}

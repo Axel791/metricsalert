@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/Axel791/metricsalert/internal/server/db"
-
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 
@@ -29,7 +27,7 @@ func NewMetricRepository(db *sqlx.DB) *MetricsRepositoryHandler {
 func (r *MetricsRepositoryHandler) UpdateGauge(ctx context.Context, name string, gaugeVal float64) (domain.Metrics, error) {
 	var result domain.Metrics
 
-	err := db.RetryOperation(func() error {
+	err := RetryOperation(func() error {
 		cteSQL := `
 			WITH updated AS (
 				UPDATE metrics
@@ -45,9 +43,9 @@ func (r *MetricsRepositoryHandler) UpdateGauge(ctx context.Context, name string,
 				WHERE NOT EXISTS (SELECT 1 FROM updated)
 				RETURNING id, name, metric_type, value, delta
 			)
-			SELECT * FROM updated
+			SELECT id, name, metric_type, value, delta FROM updated
 			UNION ALL
-			SELECT * FROM inserted
+			SELECT id, name, metric_type, value, delta FROM inserted
 		`
 
 		if err := r.db.QueryRowxContext(ctx, cteSQL, name, gaugeVal).StructScan(&result); err != nil {
@@ -62,7 +60,7 @@ func (r *MetricsRepositoryHandler) UpdateGauge(ctx context.Context, name string,
 func (r *MetricsRepositoryHandler) UpdateCounter(ctx context.Context, name string, value int64) (domain.Metrics, error) {
 	var result domain.Metrics
 
-	err := db.RetryOperation(func() error {
+	err := RetryOperation(func() error {
 		cteSQL := `
 			WITH updated AS (
 				UPDATE metrics
@@ -78,9 +76,9 @@ func (r *MetricsRepositoryHandler) UpdateCounter(ctx context.Context, name strin
 				WHERE NOT EXISTS (SELECT 1 FROM updated)
 				RETURNING id, name, metric_type, value, delta
 			)
-			SELECT * FROM updated
+			SELECT id, name, metric_type, value, delta FROM updated
 			UNION ALL
-			SELECT * FROM inserted
+			SELECT id, name, metric_type, value, delta FROM inserted
 			`
 
 		if err := r.db.QueryRowxContext(ctx, cteSQL, name, value).StructScan(&result); err != nil {
@@ -97,7 +95,7 @@ func (r *MetricsRepositoryHandler) UpdateCounter(ctx context.Context, name strin
 func (r *MetricsRepositoryHandler) GetMetric(ctx context.Context, metric domain.Metrics) (domain.Metrics, error) {
 	var result domain.Metrics
 
-	err := db.RetryOperation(func() error {
+	err := RetryOperation(func() error {
 		query, args, err := cursor.
 			Select("id", "name", "metric_type", "value", "delta").
 			From("metrics").
@@ -123,7 +121,7 @@ func (r *MetricsRepositoryHandler) GetMetric(ctx context.Context, metric domain.
 func (r *MetricsRepositoryHandler) GetAllMetrics(ctx context.Context) (map[string]domain.Metrics, error) {
 	metricsMap := make(map[string]domain.Metrics)
 
-	err := db.RetryOperation(func() error {
+	err := RetryOperation(func() error {
 		query, args, err := cursor.
 			Select("id", "name", "metric_type", "value", "delta").
 			From("metrics").
@@ -161,7 +159,7 @@ func (r *MetricsRepositoryHandler) BatchUpdateMetrics(ctx context.Context, metri
 		return nil
 	}
 
-	return db.RetryOperation(func() error {
+	return RetryOperation(func() error {
 		var sb strings.Builder
 
 		sb.WriteString(`
