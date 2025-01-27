@@ -4,8 +4,8 @@ CREATE TABLE metrics (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
     metric_type VARCHAR(10) NOT NULL CHECK (metric_type IN ('gauge', 'counter')),
-    value DOUBLE PRECISION NOT NULL,
-    delta BIGINT NOT NULL,
+    value DOUBLE PRECISION DEFAULT NULL,
+    delta BIGINT DEFAULT NULL,
     UNIQUE (name, metric_type)
 );
 -- +goose StatementEnd
