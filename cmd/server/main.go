@@ -2,10 +2,10 @@ package main
 
 import (
 	"context"
+	"github.com/Axel791/metricsalert/internal/server/db"
+	"github.com/go-chi/chi/v5"
 	"net/http"
 	"time"
-
-	"github.com/Axel791/metricsalert/internal/db"
 
 	"github.com/go-chi/chi/v5/middleware"
 
@@ -18,7 +18,6 @@ import (
 	"github.com/Axel791/metricsalert/internal/server/services"
 	"github.com/Axel791/metricsalert/internal/shared/validators"
 
-	"github.com/go-chi/chi/v5"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 )

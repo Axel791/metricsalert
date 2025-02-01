@@ -3,10 +3,9 @@ package db
 import (
 	"context"
 
+	"github.com/Axel791/metricsalert/internal/server/config"
 	"github.com/jmoiron/sqlx"
 	"github.com/pressly/goose/v3"
-
-	"github.com/Axel791/metricsalert/internal/server/config"
 )
 
 // ConnectDB - подключение к базе данных, применение миграций
