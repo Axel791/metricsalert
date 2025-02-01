@@ -3,9 +3,8 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"github.com/Axel791/metricsalert/internal/server/db"
 	"strings"
-
-	"github.com/Axel791/metricsalert/internal/db"
 
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
