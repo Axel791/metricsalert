@@ -2,9 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/go-chi/chi/v5/middleware"
 	"net/http"
 	"time"
+
+	"github.com/Axel791/metricsalert/internal/db"
+
+	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/Axel791/metricsalert/internal/server/handlers/deprecated"
 
@@ -16,11 +19,13 @@ import (
 	"github.com/Axel791/metricsalert/internal/shared/validators"
 
 	"github.com/go-chi/chi/v5"
+	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
 	log := logrus.New()
+
 	log.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp:   true,
 		TimestampFormat: "2006-01-02 15:04:05",
@@ -32,30 +37,44 @@ func main() {
 		log.Fatalf("error loading config: %v", err)
 	}
 
-	addr, storeIntervalFlag, filePathFlag, restoreFlag := config.ParseFlags(cfg)
+	addr, databaseDSN, storeIntervalFlag, filePathFlag, restoreFlag := config.ParseFlags(cfg)
 
-	if !validators.IsValidAddress(addr, false) {
-		log.Fatalf("invalid address: %s\n", addr)
+	cfg.Address = addr
+	cfg.DatabaseDSN = databaseDSN
+	cfg.StoreInterval = storeIntervalFlag
+	cfg.FileStoragePath = filePathFlag
+	cfg.Restore = restoreFlag
+
+	if !validators.IsValidAddress(cfg.Address, false) {
+		log.Fatalf("invalid address: %s\n", cfg.Address)
 	}
 
-	router := chi.NewRouter()
+	dbConn, err := db.ConnectDB(cfg.DatabaseDSN, cfg)
+	if err != nil {
+		log.Fatalf("error connecting to database: %v", err)
+	}
+	defer func() {
+		if dbConn != nil {
+			_ = dbConn.Close()
+		}
+	}()
 
+	router := chi.NewRouter()
 	router.Use(serverMiddleware.WithLogging)
 	router.Use(serverMiddleware.GzipMiddleware)
 	router.Use(middleware.StripSlashes)
 
 	opts := repositories.StoreOptions{
-		FilePath:        filePathFlag,
-		RestoreFromFile: restoreFlag,
-		StoreInterval:   time.Duration(storeIntervalFlag) * time.Second,
+		FilePath:        cfg.FileStoragePath,
+		RestoreFromFile: cfg.Restore,
+		StoreInterval:   time.Duration(cfg.StoreInterval) * time.Second,
 		UseFileStore:    cfg.UseFileStorage,
 	}
 
-	storage, err := repositories.StoreFactory(context.Background(), opts)
+	storage, err := repositories.StoreFactory(context.Background(), dbConn, opts)
 	if err != nil {
 		log.Fatalf("error creating storage: %v", err)
 	}
-
 	metricsService := services.NewMetricsService(storage)
 
 	// Актуальные маршруты
@@ -66,17 +85,27 @@ func main() {
 	)
 	router.Method(
 		http.MethodPost,
+		"/updates",
+		handlers.NewUpdatesMetricsHandler(metricsService, log),
+	)
+	router.Method(
+		http.MethodPost,
 		"/value",
 		handlers.NewGetMetricHandler(metricsService, log),
 	)
 	router.Get(
 		"/healthcheck",
-		handlers.HealthCheckHandler,
+		handlers.NewHealthCheckHandler,
 	)
 	router.Method(
 		http.MethodGet,
 		"/",
 		handlers.NewGetMetricsHTMLHandler(metricsService),
+	)
+	router.Method(
+		http.MethodGet,
+		"/ping",
+		handlers.NewDatabaseHealthCheckHandler(cfg.DatabaseDSN),
 	)
 
 	// Устаревшие маршруты
@@ -90,9 +119,9 @@ func main() {
 		"/value/{metricType}/{name}",
 		deprecated.NewGetMetricHandler(storage),
 	)
-	log.Infof("server started on %s", addr)
-	err = http.ListenAndServe(addr, router)
 
+	log.Infof("server started on %s", cfg.Address)
+	err = http.ListenAndServe(cfg.Address, router)
 	if err != nil {
 		log.Fatalf("error starting server: %v", err)
 	}

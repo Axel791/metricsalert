@@ -2,8 +2,11 @@ package repositories
 
 import (
 	"context"
-	"github.com/Axel791/metricsalert/internal/server/model/domain"
 	"time"
+
+	"github.com/jmoiron/sqlx"
+
+	"github.com/Axel791/metricsalert/internal/server/model/domain"
 )
 
 type StoreOptions struct {
@@ -14,14 +17,22 @@ type StoreOptions struct {
 }
 
 type Store interface {
-	UpdateGauge(name string, value float64) domain.Metrics
-	UpdateCounter(name string, value int64) domain.Metrics
-	GetMetric(metricsDomain domain.Metrics) domain.Metrics
-	GetAllMetrics() map[string]domain.Metrics
+	UpdateGauge(ctx context.Context, name string, value float64) (domain.Metrics, error)
+	UpdateCounter(ctx context.Context, name string, value int64) (domain.Metrics, error)
+	GetMetric(ctx context.Context, metric domain.Metrics) (domain.Metrics, error)
+	GetAllMetrics(ctx context.Context) (map[string]domain.Metrics, error)
+	BatchUpdateMetrics(ctx context.Context, metrics []domain.Metrics) error
 }
 
-func StoreFactory(ctx context.Context, opts StoreOptions) (Store, error) {
-	store := NewMetricRepository()
+func StoreFactory(ctx context.Context, db *sqlx.DB, opts StoreOptions) (Store, error) {
+	var store Store
+
+	if db != nil {
+		store = NewMetricRepository(db)
+	} else {
+		store = NewMetricMapRepository()
+	}
+
 	if opts.UseFileStore {
 		return NewFileStore(ctx, store, opts.FilePath, opts.RestoreFromFile, opts.StoreInterval)
 	}

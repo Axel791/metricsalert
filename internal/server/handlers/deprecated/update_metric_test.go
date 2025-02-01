@@ -9,10 +9,10 @@ import (
 	"gopkg.in/guregu/null.v4"
 
 	"github.com/Axel791/metricsalert/internal/server/model/domain"
-
 	"github.com/Axel791/metricsalert/internal/server/repositories/mocks"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,6 +26,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 	flag.String("a", "localhost:8080", "HTTP server address")
 
 	mockStore := new(mocks.MockStore)
+
 	handler := NewUpdateMetricHandler(mockStore)
 
 	router := chi.NewRouter()
@@ -44,13 +45,14 @@ func TestUpdateMetricHandler(t *testing.T) {
 			method:         http.MethodPost,
 			expectedStatus: http.StatusOK,
 			mockBehavior: func() {
-				mockStore.On(
-					"UpdateGauge", "testMetric", 123.45).
+				mockStore.
+					On("UpdateGauge", mock.Anything, "testMetric", 123.45).
 					Return(domain.Metrics{
-						ID:    "testMetric",
+						Name:  "testMetric",
 						MType: Gauge,
 						Value: null.NewFloat(123.45, true),
-					}).Once()
+					}, nil).
+					Once()
 			},
 		},
 		{
@@ -59,13 +61,14 @@ func TestUpdateMetricHandler(t *testing.T) {
 			method:         http.MethodPost,
 			expectedStatus: http.StatusOK,
 			mockBehavior: func() {
-				mockStore.On(
-					"UpdateCounter", "testMetric", int64(10)).
+				mockStore.
+					On("UpdateCounter", mock.Anything, "testMetric", int64(10)).
 					Return(domain.Metrics{
-						ID:    "testMetric",
+						Name:  "testMetric",
 						MType: Counter,
 						Delta: null.NewInt(10, true),
-					}).Once()
+					}, nil).
+					Once()
 			},
 		},
 		{
@@ -94,6 +97,7 @@ func TestUpdateMetricHandler(t *testing.T) {
 			router.ServeHTTP(rec, req)
 
 			require.Equal(t, tt.expectedStatus, rec.Code)
+
 			mockStore.AssertExpectations(t)
 		})
 	}

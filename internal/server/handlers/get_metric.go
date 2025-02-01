@@ -32,7 +32,9 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	metricDTO, err := h.metricService.GetMetric(input.MType, input.ID)
+	h.logger.Infof("MTYpe: %s ID: %s", input.MType, input.ID)
+
+	metricDTO, err := h.metricService.GetMetric(r.Context(), input.MType, input.ID)
 	if err != nil {
 		h.logger.Infof("Error getting metric: %v", err)
 		http.Error(w, err.Error(), http.StatusNotFound)

@@ -12,10 +12,11 @@ const (
 )
 
 type Metrics struct {
-	ID    string
-	MType string
-	Delta null.Int
-	Value null.Float
+	ID    int64      `db:"id"`
+	Name  string     `db:"name"`
+	MType string     `db:"metric_type"`
+	Delta null.Int   `db:"delta"`
+	Value null.Float `db:"value"`
 }
 
 func (m *Metrics) ValidateMetricsType() error {
@@ -26,7 +27,7 @@ func (m *Metrics) ValidateMetricsType() error {
 }
 
 func (m *Metrics) ValidateMetricID() error {
-	if m.ID == "" {
+	if m.Name == "" {
 		return errors.New("metric id is required")
 	}
 	return nil

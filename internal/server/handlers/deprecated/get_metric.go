@@ -25,7 +25,7 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	name := chi.URLParam(r, "name")
 
 	metric := domain.Metrics{
-		ID:    name,
+		Name:  name,
 		MType: metricType,
 	}
 
@@ -39,9 +39,13 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	value := h.storage.GetMetric(metric)
+	value, err := h.storage.GetMetric(r.Context(), metric)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error get metric: %v", err), http.StatusInternalServerError)
+		return
+	}
 
-	if value.ID == "" {
+	if value.Name == "" {
 		log.Printf("GetMetricHandler: metric not found: %s (type: %s)", name, metricType)
 		http.Error(w, "metric not found", http.StatusNotFound)
 		return
@@ -70,7 +74,7 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Length", fmt.Sprintf("%d", len(valueStr)))
 	w.WriteHeader(http.StatusOK)
 
-	_, err := w.Write([]byte(valueStr))
+	_, err = w.Write([]byte(valueStr))
 	if err != nil {
 		log.Printf(
 			"GetMetricHandler: invalid metric %s (type: %s): %v", name, metricType, err,

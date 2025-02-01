@@ -16,7 +16,7 @@ import (
 )
 
 const (
-	maxRetries  = 5
+	maxRetries  = 3
 	minInterval = 1 * time.Second
 	maxInterval = 5 * time.Second
 )
@@ -73,42 +73,35 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 		return fmt.Errorf("health check failed: %w", err)
 	}
 
-	for _, metric := range metricsList {
-		client.logger.Infof(
-			"Sending metric: %s %s %v %d", metric.ID, metric.MType, metric.Value, metric.Delta,
-		)
-		err := client.sendMetric(metric)
-		if err != nil {
-			log.Errorf("failed to send metric %s: %v", metric.ID, err)
-		}
+	if err := client.healthCheck(); err != nil {
+		return fmt.Errorf("health check failed: %w", err)
 	}
-
-	return nil
+	return client.sendMetricsBatch(metricsList)
 }
 
-func (client *MetricClient) sendMetric(metric api.MetricPost) error {
-	body, err := json.Marshal(metric)
+func (client *MetricClient) sendMetricsBatch(metricsList []api.MetricPost) error {
+	body, err := json.Marshal(metricsList)
 	if err != nil {
-		return fmt.Errorf("failed to marshal metric: %w", err)
+		return fmt.Errorf("failed to marshal metrics batch: %w", err)
 	}
 
 	compressedBody, err := compressData(body)
 	if err != nil {
-		return fmt.Errorf("failed to compress data: %w", err)
+		return fmt.Errorf("failed to compress metrics batch: %w", err)
 	}
 
 	headers := http.Header{}
 	headers.Set("Content-Type", "application/json")
 	headers.Set("Content-Encoding", "gzip")
 
-	u, err := url.Parse(fmt.Sprintf("%s/update", client.baseURL))
+	u, err := url.Parse(fmt.Sprintf("%s/updates", client.baseURL))
 	if err != nil {
 		return fmt.Errorf("failed to parse URL: %w", err)
 	}
 
 	rsp, err := client.httpClient.Post(u.String(), bytes.NewBuffer(compressedBody), headers)
 	if err != nil {
-		return fmt.Errorf("failed to send metrics %s: %w", metric.ID, err)
+		return fmt.Errorf("failed to send metrics batch: %w", err)
 	}
 	defer rsp.Body.Close()
 
@@ -116,6 +109,7 @@ func (client *MetricClient) sendMetric(metric api.MetricPost) error {
 		return fmt.Errorf("unexpected status code: %d", rsp.StatusCode)
 	}
 
+	client.logger.Infof("Successfully sent metrics batch: %d metrics", len(metricsList))
 	return nil
 }
 
@@ -154,7 +148,7 @@ func (client *MetricClient) healthCheck() error {
 		retries++
 
 		if interval < maxInterval {
-			interval += time.Duration(0.5 * float64(time.Second))
+			interval += 2 * time.Second
 			if interval > maxInterval {
 				interval = maxInterval
 			}
