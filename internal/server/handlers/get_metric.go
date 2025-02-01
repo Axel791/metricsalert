@@ -13,17 +13,30 @@ import (
 
 type GetMetricHandler struct {
 	metricService services.Metric
+	authService   services.AuthService
 	logger        *log.Logger
 }
 
-func NewGetMetricHandler(metricService services.Metric, logger *log.Logger) *GetMetricHandler {
+func NewGetMetricHandler(
+	metricService services.Metric,
+	authService services.AuthService,
+	logger *log.Logger,
+) *GetMetricHandler {
 	return &GetMetricHandler{
 		metricService: metricService,
+		authService:   authService,
 		logger:        logger,
 	}
 }
 
 func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	token := r.Header.Get("HashSHA256")
+	if err := h.authService.Validate(token); err != nil {
+		h.logger.Infof("error: %v", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var input api.GetMetric
 
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {

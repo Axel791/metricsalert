@@ -36,13 +36,14 @@ func main() {
 		log.Fatalf("error loading config: %v", err)
 	}
 
-	addr, databaseDSN, storeIntervalFlag, filePathFlag, restoreFlag := config.ParseFlags(cfg)
+	addr, databaseDSN, storeIntervalFlag, filePathFlag, restoreFlag, key := config.ParseFlags(cfg)
 
 	cfg.Address = addr
 	cfg.DatabaseDSN = databaseDSN
 	cfg.StoreInterval = storeIntervalFlag
 	cfg.FileStoragePath = filePathFlag
 	cfg.Restore = restoreFlag
+	cfg.Key = key
 
 	if !validators.IsValidAddress(cfg.Address, false) {
 		log.Fatalf("invalid address: %s\n", cfg.Address)
@@ -75,22 +76,23 @@ func main() {
 		log.Fatalf("error creating storage: %v", err)
 	}
 	metricsService := services.NewMetricsService(storage)
+	authService := services.NewAuthService(key)
 
 	// Актуальные маршруты
 	router.Method(
 		http.MethodPost,
 		"/update",
-		handlers.NewUpdateMetricHandler(metricsService, log),
+		handlers.NewUpdateMetricHandler(metricsService, authService, log),
 	)
 	router.Method(
 		http.MethodPost,
 		"/updates",
-		handlers.NewUpdatesMetricsHandler(metricsService, log),
+		handlers.NewUpdatesMetricsHandler(metricsService, authService, log),
 	)
 	router.Method(
 		http.MethodPost,
 		"/value",
-		handlers.NewGetMetricHandler(metricsService, log),
+		handlers.NewGetMetricHandler(metricsService, authService, log),
 	)
 	router.Get(
 		"/healthcheck",
@@ -99,7 +101,7 @@ func main() {
 	router.Method(
 		http.MethodGet,
 		"/",
-		handlers.NewGetMetricsHTMLHandler(metricsService),
+		handlers.NewGetMetricsHTMLHandler(metricsService, authService),
 	)
 	router.Method(
 		http.MethodGet,

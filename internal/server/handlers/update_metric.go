@@ -12,17 +12,30 @@ import (
 
 type UpdateMetricHandler struct {
 	metricService services.Metric
+	authService   services.AuthService
 	logger        *log.Logger
 }
 
-func NewUpdateMetricHandler(metricService services.Metric, logger *log.Logger) *UpdateMetricHandler {
+func NewUpdateMetricHandler(
+	metricService services.Metric,
+	authService services.AuthService,
+	logger *log.Logger,
+) *UpdateMetricHandler {
 	return &UpdateMetricHandler{
 		metricService: metricService,
+		authService:   authService,
 		logger:        logger,
 	}
 }
 
 func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	token := r.Header.Get("HashSHA256")
+	if err := h.authService.Validate(token); err != nil {
+		h.logger.Infof("error: %v", err)
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
 	var input api.Metrics
 	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
 		h.logger.Infof("UpdateMetricHandler: failed to decode request body: %v", err)

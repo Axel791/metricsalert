@@ -13,3 +13,7 @@ type Metric interface {
 	GetAllMetric(ctx context.Context) ([]dto.Metrics, error)
 	BatchMetricsUpdate(ctx context.Context, metrics []api.Metrics) error
 }
+
+type AuthService interface {
+	Validate(token string) error
+}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/Axel791/metricsalert/internal/agent/services"
 	"math/rand"
 	"sync"
 	"time"
@@ -14,7 +15,7 @@ import (
 	"github.com/Axel791/metricsalert/internal/shared/validators"
 )
 
-func runAgent(address string, reportInterval, pollInterval time.Duration, log *logrus.Logger) {
+func runAgent(address string, reportInterval, pollInterval time.Duration, log *logrus.Logger, key string) {
 	if !validators.IsValidAddress(address, true) {
 		log.Fatalf("invalid address: %s\n", address)
 	}
@@ -22,7 +23,8 @@ func runAgent(address string, reportInterval, pollInterval time.Duration, log *l
 	tickerCollector := time.NewTicker(pollInterval)
 	tickerSender := time.NewTicker(reportInterval)
 
-	metricClient := sender.NewMetricClient(address, log)
+	authService := services.NewAuthServiceHandler(key)
+	metricClient := sender.NewMetricClient(address, log, authService)
 
 	defer tickerCollector.Stop()
 	defer tickerSender.Stop()
@@ -99,7 +101,7 @@ func main() {
 		log.Fatalf("error loading config: %v\n", err)
 	}
 
-	address, reportInterval, pollInterval := config.ParseFlags(cfg)
+	address, reportInterval, pollInterval, key := config.ParseFlags(cfg)
 
-	runAgent(address, reportInterval, pollInterval, log)
+	runAgent(address, reportInterval, pollInterval, log, key)
 }

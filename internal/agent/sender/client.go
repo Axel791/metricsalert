@@ -5,6 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"github.com/Axel791/metricsalert/internal/agent/services"
 	"net/http"
 	"net/url"
 	"time"
@@ -22,17 +23,19 @@ const (
 )
 
 type MetricClient struct {
-	httpClient *httpclient.Client
-	logger     *log.Logger
-	baseURL    string
+	httpClient  *httpclient.Client
+	logger      *log.Logger
+	authService services.AuthService
+	baseURL     string
 }
 
-func NewMetricClient(baseURL string, logger *log.Logger) *MetricClient {
+func NewMetricClient(baseURL string, logger *log.Logger, authService services.AuthService) *MetricClient {
 	client := httpclient.NewClient()
 	return &MetricClient{
-		httpClient: client,
-		baseURL:    baseURL,
-		logger:     logger,
+		httpClient:  client,
+		authService: authService,
+		baseURL:     baseURL,
+		logger:      logger,
 	}
 }
 
@@ -93,6 +96,11 @@ func (client *MetricClient) sendMetricsBatch(metricsList []api.MetricPost) error
 	headers := http.Header{}
 	headers.Set("Content-Type", "application/json")
 	headers.Set("Content-Encoding", "gzip")
+
+	token := client.authService.ComputeHash()
+	if token != "" {
+		headers.Set("HashSHA256", token)
+	}
 
 	u, err := url.Parse(fmt.Sprintf("%s/updates", client.baseURL))
 	if err != nil {

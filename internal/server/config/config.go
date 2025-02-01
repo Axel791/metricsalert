@@ -14,6 +14,7 @@ type Config struct {
 	UseFileStorage  bool   `mapstructure:"USE_FILE_STORAGE"`
 	DatabaseDSN     string `mapstructure:"DATABASE_DSN"`
 	MigrationsPath  string `mapstructure:"MIGRATIONS_PATH"`
+	Key             string `mapstructure:"KEY"`
 }
 
 // ServerLoadConfig загружает конфигурацию из .env, переменных окружения и задает значения по умолчанию
@@ -37,6 +38,7 @@ func ServerLoadConfig() (*Config, error) {
 	_ = viper.BindEnv("RESTORE", "RESTORE")
 	_ = viper.BindEnv("USE_FILE_STORAGE", "USE_FILE_STORAGE")
 	_ = viper.BindEnv("DATABASE_DSN", "DATABASE_DSN")
+	_ = viper.BindEnv("KEY", "KEy")
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Infof("filed find file config set defoult value: %v", err)
