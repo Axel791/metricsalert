@@ -24,6 +24,8 @@ func (s *AuthServiceHandler) Validate(token string, body []byte) error {
 		return nil
 	}
 
+	log.Infof("body: %s", string(body))
+
 	hash := hmac.New(sha256.New, []byte(s.key))
 	hash.Write(body)
 
