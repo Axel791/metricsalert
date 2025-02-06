@@ -24,13 +24,17 @@ func (s *AuthServiceHandler) Validate(token string, body []byte) error {
 		return nil
 	}
 
-	log.Infof("token: %s", token)
 	log.Infof("key server: %s", s.key)
+	log.Infof("server body: %s", string(body))
 
 	hash := hmac.New(sha256.New, []byte(s.key))
+	log.Infof("hash before add bosy server: %s", hash)
 	hash.Write(body)
 
 	validToken := hex.EncodeToString(hash.Sum(nil))
+
+	log.Infof("validate token: %s", validToken)
+	log.Infof("input token: %s", token)
 
 	if token != validToken {
 		return fmt.Errorf("invalid token")

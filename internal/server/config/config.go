@@ -38,7 +38,7 @@ func ServerLoadConfig() (*Config, error) {
 	_ = viper.BindEnv("RESTORE", "RESTORE")
 	_ = viper.BindEnv("USE_FILE_STORAGE", "USE_FILE_STORAGE")
 	_ = viper.BindEnv("DATABASE_DSN", "DATABASE_DSN")
-	_ = viper.BindEnv("KEY", "KEy")
+	_ = viper.BindEnv("KEY", "KEY")
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Infof("filed find file config set defoult value: %v", err)

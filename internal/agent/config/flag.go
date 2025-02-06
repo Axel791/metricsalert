@@ -18,7 +18,7 @@ func ParseFlags(cfg *Config) (string, time.Duration, time.Duration, string) {
 		int(cfg.PollInterval),
 		"Frequency of collecting metrics from runtime (in seconds)",
 	)
-	key := flag.String("k", cfg.Address, "secret key")
+	key := flag.String("k", cfg.Key, "secret key")
 
 	flag.Parse()
 

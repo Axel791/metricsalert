@@ -103,5 +103,9 @@ func main() {
 
 	address, reportInterval, pollInterval, key := config.ParseFlags(cfg)
 
+	cfg.Key = key
+
+	log.Infof("start agent: key %s", key)
+
 	runAgent(address, reportInterval, pollInterval, log, key)
 }

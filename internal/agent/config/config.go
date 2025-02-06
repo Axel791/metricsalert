@@ -23,7 +23,7 @@ func AgentLoadConfig() (*Config, error) {
 	viper.SetDefault("REPORT_INTERVAL", 10)
 	viper.SetDefault("POLL_INTERVAL", 2)
 
-	_ = viper.BindEnv("KEY", "KEy")
+	_ = viper.BindEnv("KEY", "KEY")
 
 	viper.AutomaticEnv()
 
