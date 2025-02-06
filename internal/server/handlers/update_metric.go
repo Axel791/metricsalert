@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	log "github.com/sirupsen/logrus"
@@ -30,7 +32,15 @@ func NewUpdateMetricHandler(
 
 func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("HashSHA256")
-	if err := h.authService.Validate(token); err != nil {
+
+	h.logger.Infof("token: %s", token)
+
+	validBody, err := h.validateBody(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	if err = h.authService.Validate(token, validBody); err != nil {
 		h.logger.Infof("error: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -49,7 +59,9 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+	computedHash := h.authService.ComputedHash(validBody)
 
+	w.Header().Set("HashSHA256", computedHash)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(metricDTO); err != nil {
@@ -57,4 +69,16 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "failed to encode response", http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h *UpdateMetricHandler) validateBody(r *http.Request) ([]byte, error) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	r.Body = io.NopCloser(bytes.NewBuffer(body))
+	if len(body) == 0 {
+		return nil, nil
+	}
+	return body, nil
 }

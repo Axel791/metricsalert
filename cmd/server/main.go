@@ -101,7 +101,7 @@ func main() {
 	router.Method(
 		http.MethodGet,
 		"/",
-		handlers.NewGetMetricsHTMLHandler(metricsService, authService),
+		handlers.NewGetMetricsHTMLHandler(metricsService),
 	)
 	router.Method(
 		http.MethodGet,

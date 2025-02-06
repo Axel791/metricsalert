@@ -10,22 +10,15 @@ import (
 
 type GetMetricsHTMLHandler struct {
 	metricService services.Metric
-	authService   services.AuthService
 }
 
 func NewGetMetricsHTMLHandler(
-	metricService services.Metric, authService services.AuthService,
+	metricService services.Metric,
 ) *GetMetricsHTMLHandler {
-	return &GetMetricsHTMLHandler{metricService: metricService, authService: authService}
+	return &GetMetricsHTMLHandler{metricService: metricService}
 }
 
 func (h *GetMetricsHTMLHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	token := r.Header.Get("HashSHA256")
-	if err := h.authService.Validate(token); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
 	metrics, err := h.metricService.GetAllMetric(r.Context())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
