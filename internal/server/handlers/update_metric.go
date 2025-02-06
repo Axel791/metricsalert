@@ -3,7 +3,6 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 
@@ -41,14 +40,8 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	normalizedBody, err := h.normalizeBody(validBody)
 
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err = h.authService.Validate(token, normalizedBody); err != nil {
+	if err = h.authService.Validate(token, validBody); err != nil {
 		h.logger.Infof("error: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -89,19 +82,4 @@ func (h *UpdateMetricHandler) validateBody(r *http.Request) ([]byte, error) {
 		return nil, nil
 	}
 	return body, nil
-}
-
-func (h *UpdateMetricHandler) normalizeBody(body []byte) ([]byte, error) {
-	var metricsList []api.Metrics
-	if err := json.Unmarshal(body, &metricsList); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal body: %w", err)
-	}
-	normalizedBody, err := json.Marshal(metricsList)
-
-	h.logger.Infof("normalized body update metric: %s", string(normalizedBody))
-
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal normalized body: %w", err)
-	}
-	return normalizedBody, nil
 }
