@@ -1,10 +1,10 @@
 package services
 
 import (
+	"bytes"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	log "github.com/sirupsen/logrus"
 )
@@ -59,16 +59,7 @@ func (s *AuthServiceHandler) ComputedHash(body []byte) string {
 }
 
 func (s *AuthServiceHandler) normalizeBody(body []byte) ([]byte, error) {
-	var rawMessage json.RawMessage
-	if err := json.Unmarshal(body, &rawMessage); err != nil {
-		return nil, fmt.Errorf("failed to unmarshal body: %w", err)
-	}
-
-	normalizedBody, err := json.Marshal(rawMessage)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal normalized body: %w", err)
-	}
-
+	normalizedBody := bytes.ReplaceAll(body, []byte(`\"`), []byte(`"`))
 	log.Infof("normalized body batch update metrics: %s", string(normalizedBody))
 	return normalizedBody, nil
 }
