@@ -6,7 +6,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/Axel791/metricsalert/internal/server/model/api"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -60,16 +59,16 @@ func (s *AuthServiceHandler) ComputedHash(body []byte) string {
 }
 
 func (s *AuthServiceHandler) normalizeBody(body []byte) ([]byte, error) {
-	var metricsList []api.Metrics
-	if err := json.Unmarshal(body, &metricsList); err != nil {
+	var rawMessage json.RawMessage
+	if err := json.Unmarshal(body, &rawMessage); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal body: %w", err)
 	}
-	normalizedBody, err := json.Marshal(metricsList)
 
-	log.Infof("normalized body batch update metrics: %s", string(normalizedBody))
-
+	normalizedBody, err := json.Marshal(rawMessage)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal normalized body: %w", err)
 	}
+
+	log.Infof("normalized body batch update metrics: %s", string(normalizedBody))
 	return normalizedBody, nil
 }
