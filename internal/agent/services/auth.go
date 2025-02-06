@@ -1,9 +1,9 @@
 package services
 
 import (
+	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	log "github.com/sirupsen/logrus"
 )
 
 type AuthServiceHandler struct {
@@ -15,13 +15,13 @@ func NewAuthServiceHandler(key string) *AuthServiceHandler {
 }
 
 // ComputeHash - вычисление хеша на основе ключа
-func (s *AuthServiceHandler) ComputeHash() string {
+func (s *AuthServiceHandler) ComputeHash(body []byte) string {
 	if s.key == "" {
 		return ""
 	}
 
-	log.Infof("key agent: %s", s.key)
+	hash := hmac.New(sha256.New, []byte(s.key))
+	hash.Write(body)
 
-	hash := sha256.Sum256([]byte(s.key))
-	return hex.EncodeToString(hash[:])
+	return hex.EncodeToString(hash.Sum(nil))
 }

@@ -1,10 +1,10 @@
 package services
 
 import (
+	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-
 	log "github.com/sirupsen/logrus"
 )
 
@@ -19,7 +19,7 @@ func NewAuthService(key string) *AuthServiceHandler {
 }
 
 // Validate - валидация входящего токена
-func (s *AuthServiceHandler) Validate(token string) error {
+func (s *AuthServiceHandler) Validate(token string, body []byte) error {
 	if s.key == "" {
 		return nil
 	}
@@ -27,11 +27,24 @@ func (s *AuthServiceHandler) Validate(token string) error {
 	log.Infof("token: %s", token)
 	log.Infof("key server: %s", s.key)
 
-	hash := sha256.Sum256([]byte(s.key))
-	computedHash := hex.EncodeToString(hash[:])
+	hash := hmac.New(sha256.New, []byte(s.key))
+	hash.Write(body)
 
-	if token != computedHash {
+	validToken := hex.EncodeToString(hash.Sum(nil))
+
+	if token != validToken {
 		return fmt.Errorf("invalid token")
 	}
 	return nil
+}
+
+func (s *AuthServiceHandler) ComputedHash(body []byte) string {
+	hash := hmac.New(sha256.New, []byte(s.key))
+
+	hash.Write(body)
+	token := hex.EncodeToString(hash.Sum(nil))
+
+	log.Infof("generated token: %s", token)
+
+	return token
 }

@@ -1,7 +1,9 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 
 	"github.com/Axel791/metricsalert/internal/server/model/api"
@@ -31,7 +33,16 @@ func NewGetMetricHandler(
 
 func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("HashSHA256")
-	if err := h.authService.Validate(token); err != nil {
+
+	h.logger.Infof("token: %s", token)
+
+	validBody, err := h.validateBody(r)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if err = h.authService.Validate(token, validBody); err != nil {
 		h.logger.Infof("error: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -44,8 +55,6 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
-
-	h.logger.Infof("MTYpe: %s ID: %s", input.MType, input.ID)
 
 	metricDTO, err := h.metricService.GetMetric(r.Context(), input.MType, input.ID)
 	if err != nil {
@@ -67,6 +76,9 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		apiResponse.Value = &metricDTO.Value.Float64
 	}
 
+	computedHash := h.authService.ComputedHash(validBody)
+
+	w.Header().Set("HashSHA256", computedHash)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(apiResponse); err != nil {
@@ -75,4 +87,16 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, errorText, http.StatusInternalServerError)
 		return
 	}
+}
+
+func (h *GetMetricHandler) validateBody(r *http.Request) ([]byte, error) {
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		return nil, err
+	}
+	r.Body = io.NopCloser(bytes.NewBuffer(body))
+	if len(body) == 0 {
+		return nil, nil
+	}
+	return body, nil
 }

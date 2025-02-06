@@ -15,5 +15,6 @@ type Metric interface {
 }
 
 type AuthService interface {
-	Validate(token string) error
+	Validate(token string, body []byte) error
+	ComputedHash(body []byte) string
 }

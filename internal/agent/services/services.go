@@ -1,5 +1,5 @@
 package services
 
 type AuthService interface {
-	ComputeHash() string
+	ComputeHash(body []byte) string
 }
