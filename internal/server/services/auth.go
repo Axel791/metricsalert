@@ -4,6 +4,8 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // AuthServiceHandler - структура сервиса auth
@@ -21,6 +23,9 @@ func (s *AuthServiceHandler) Validate(token string) error {
 	if s.key == "" {
 		return nil
 	}
+
+	log.Infof("token: %s", token)
+	log.Infof("key server: %s", s.key)
 
 	hash := sha256.Sum256([]byte(s.key))
 	computedHash := hex.EncodeToString(hash[:])
