@@ -32,21 +32,21 @@ func NewGetMetricHandler(
 }
 
 func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	token := r.Header.Get("HashSHA256")
-
-	h.logger.Infof("get token sever: %s", token)
-
-	validBody, err := h.validateBody(r)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	if err = h.authService.Validate(token, validBody); err != nil {
-		h.logger.Infof("error: %v", err)
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
+	//token := r.Header.Get("HashSHA256")
+	//
+	//h.logger.Infof("get token sever: %s", token)
+	//
+	//validBody, err := h.validateBody(r)
+	//if err != nil {
+	//	http.Error(w, err.Error(), http.StatusBadRequest)
+	//	return
+	//}
+	//
+	//if err = h.authService.Validate(token, validBody); err != nil {
+	//	h.logger.Infof("error: %v", err)
+	//	http.Error(w, err.Error(), http.StatusBadRequest)
+	//	return
+	//}
 
 	var input api.GetMetric
 
@@ -76,9 +76,9 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		apiResponse.Value = &metricDTO.Value.Float64
 	}
 
-	computedHash := h.authService.ComputedHash(validBody)
+	//computedHash := h.authService.ComputedHash(validBody)
 
-	w.Header().Set("HashSHA256", computedHash)
+	//w.Header().Set("HashSHA256", computedHash)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(apiResponse); err != nil {
