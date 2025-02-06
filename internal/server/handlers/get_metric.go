@@ -34,7 +34,7 @@ func NewGetMetricHandler(
 func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	token := r.Header.Get("HashSHA256")
 
-	h.logger.Infof("token: %s", token)
+	h.logger.Infof("get token sever: %s", token)
 
 	validBody, err := h.validateBody(r)
 	if err != nil {
