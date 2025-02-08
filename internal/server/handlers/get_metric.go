@@ -13,18 +13,15 @@ import (
 
 type GetMetricHandler struct {
 	metricService services.Metric
-	authService   services.AuthService
 	logger        *log.Logger
 }
 
 func NewGetMetricHandler(
 	metricService services.Metric,
-	authService services.AuthService,
 	logger *log.Logger,
 ) *GetMetricHandler {
 	return &GetMetricHandler{
 		metricService: metricService,
-		authService:   authService,
 		logger:        logger,
 	}
 }

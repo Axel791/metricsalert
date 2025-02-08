@@ -61,8 +61,11 @@ func main() {
 		}
 	}()
 
+	signService := services.NewSignService(key)
+
 	router := chi.NewRouter()
 	router.Use(serverMiddleware.WithLogging)
+	router.Use(serverMiddleware.SignatureMiddleware(signService))
 	router.Use(serverMiddleware.GzipMiddleware)
 	router.Use(middleware.StripSlashes)
 
@@ -78,23 +81,22 @@ func main() {
 		log.Fatalf("error creating storage: %v", err)
 	}
 	metricsService := services.NewMetricsService(storage)
-	authService := services.NewAuthService(key)
 
 	// Актуальные маршруты
 	router.Method(
 		http.MethodPost,
 		"/update",
-		handlers.NewUpdateMetricHandler(metricsService, authService, log),
+		handlers.NewUpdateMetricHandler(metricsService, log),
 	)
 	router.Method(
 		http.MethodPost,
 		"/updates",
-		handlers.NewUpdatesMetricsHandler(metricsService, authService, log),
+		handlers.NewUpdatesMetricsHandler(metricsService, log),
 	)
 	router.Method(
 		http.MethodPost,
 		"/value",
-		handlers.NewGetMetricHandler(metricsService, authService, log),
+		handlers.NewGetMetricHandler(metricsService, log),
 	)
 	router.Get(
 		"/healthcheck",

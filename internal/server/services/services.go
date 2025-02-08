@@ -14,7 +14,7 @@ type Metric interface {
 	BatchMetricsUpdate(ctx context.Context, metrics []api.Metrics) error
 }
 
-type AuthService interface {
+type SignService interface {
 	Validate(token string, body []byte) error
 	ComputedHash(body []byte) string
 }

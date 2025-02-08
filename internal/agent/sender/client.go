@@ -97,7 +97,7 @@ func (client *MetricClient) sendMetricsBatch(metricsList []api.MetricPost) error
 	headers.Set("Content-Type", "application/json")
 	headers.Set("Content-Encoding", "gzip")
 
-	token := client.authService.ComputeHash(body)
+	token := client.authService.ComputeHash(compressedBody)
 
 	client.logger.Infof("agent token: %s", token)
 
