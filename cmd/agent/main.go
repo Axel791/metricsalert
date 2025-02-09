@@ -1,14 +1,16 @@
 package main
 
 import (
-	"github.com/Axel791/metricsalert/internal/agent/sender"
-	"github.com/Axel791/metricsalert/internal/agent/services"
-	"github.com/Axel791/metricsalert/internal/shared/validators"
-	"github.com/shirou/gopsutil/cpu"
-	"github.com/shirou/gopsutil/mem"
 	"math/rand"
 	"sync"
 	"time"
+
+	"github.com/shirou/gopsutil/cpu"
+	"github.com/shirou/gopsutil/mem"
+
+	"github.com/Axel791/metricsalert/internal/agent/sender"
+	"github.com/Axel791/metricsalert/internal/agent/services"
+	"github.com/Axel791/metricsalert/internal/shared/validators"
 
 	"github.com/sirupsen/logrus"
 

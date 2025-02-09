@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
-	"github.com/Axel791/metricsalert/internal/server/services"
 	"io"
 	"net"
 	"net/http"
+
+	"github.com/Axel791/metricsalert/internal/server/services"
 )
 
 // responseCapture перехватывает запись ответа и буферизует тело,

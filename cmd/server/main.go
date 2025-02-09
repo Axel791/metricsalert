@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
-	"github.com/Axel791/metricsalert/internal/server/db"
-	"github.com/go-chi/chi/v5"
 	"net/http"
 	"time"
+
+	"github.com/go-chi/chi/v5"
+
+	"github.com/Axel791/metricsalert/internal/server/db"
 
 	"github.com/go-chi/chi/v5/middleware"
 
