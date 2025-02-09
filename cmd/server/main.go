@@ -45,8 +45,6 @@ func main() {
 	cfg.Restore = restoreFlag
 	cfg.Key = key
 
-	log.Infof("start server with key: %s", cfg.Key)
-
 	if !validators.IsValidAddress(cfg.Address, false) {
 		log.Fatalf("invalid address: %s\n", cfg.Address)
 	}

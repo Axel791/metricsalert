@@ -7,10 +7,11 @@ import (
 
 // Config структура для хранения конфигурации
 type Config struct {
-	Address        string `mapstructure:"address"`
-	ReportInterval int64  `mapstructure:"report_interval"`
-	PollInterval   int64  `mapstructure:"poll_interval"`
+	Address        string `mapstructure:"ADDRESS"`
+	ReportInterval int64  `mapstructure:"REPORT_INTERVAL"`
+	PollInterval   int64  `mapstructure:"POLL_INTERVAL"`
 	Key            string `mapstructure:"KEY"`
+	RateLimit      int    `mapstructure:"RATE_LIMIT"`
 }
 
 // AgentLoadConfig загружает конфигурацию из .env, переменных окружения и задает значения по умолчанию
@@ -24,6 +25,7 @@ func AgentLoadConfig() (*Config, error) {
 	viper.SetDefault("POLL_INTERVAL", 2)
 
 	_ = viper.BindEnv("KEY", "KEY")
+	_ = viper.BindEnv("RATE_LIMIT", "RATE_LIMIT")
 
 	viper.AutomaticEnv()
 

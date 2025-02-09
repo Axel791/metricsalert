@@ -70,6 +70,8 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 		{ID: "TotalAlloc", MType: "gauge", Value: &metrics.TotalAlloc},
 		{ID: "PollCount", MType: "counter", Delta: &metrics.PollCount},
 		{ID: "RandomValue", MType: "gauge", Value: &metrics.RandomValue},
+		{ID: "TotalMemory", MType: "gauge", Value: &metrics.TotalMemory},
+		{ID: "FreeMemory", MType: "gauge", Value: &metrics.FreeMemory},
 	}
 
 	if err := client.healthCheck(); err != nil {
