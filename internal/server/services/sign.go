@@ -4,53 +4,37 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"fmt"
-	log "github.com/sirupsen/logrus"
+	"errors"
 )
 
-// SignServiceHandler - структура сервиса auth
+// SignServiceHandler реализует SignService.
 type SignServiceHandler struct {
 	key string
 }
 
-// NewSignService - инициализация сервиса auth
+// NewSignService создаёт новый обработчик подписи.
 func NewSignService(key string) *SignServiceHandler {
 	return &SignServiceHandler{key: key}
 }
 
-// Validate - валидация входящего токена
-func (s *SignServiceHandler) Validate(token string, body []byte) error {
+// ComputedHash вычисляет хеш для заданного тела.
+func (s *SignServiceHandler) ComputedHash(body []byte) string {
 	if s.key == "" {
-		return nil
+		return ""
 	}
+	hash := hmac.New(sha256.New, []byte(s.key))
+	hash.Write(body)
+	return hex.EncodeToString(hash.Sum(nil))
+}
 
+// Validate сравнивает переданный токен с вычисленным для тела.
+func (s *SignServiceHandler) Validate(token string, body []byte) error {
 	if token == "" {
 		return nil
 	}
-
-	log.Infof("body: %s", string(body))
-
-	hash := hmac.New(sha256.New, []byte(s.key))
-	hash.Write(body)
-
-	validToken := hex.EncodeToString(hash.Sum(nil))
-
-	log.Infof("validate token: %s", validToken)
-	log.Infof("input token: %s", token)
-
-	if token != validToken {
-		return fmt.Errorf("invalid token")
+	expected := s.ComputedHash(body)
+	if token != expected {
+		return errors.New("invalid sign")
 	}
 	return nil
-}
-
-func (s *SignServiceHandler) ComputedHash(body []byte) string {
-	hash := hmac.New(sha256.New, []byte(s.key))
-
-	hash.Write(body)
-	token := hex.EncodeToString(hash.Sum(nil))
-
-	log.Infof("generated token: %s", token)
-
-	return token
 }
