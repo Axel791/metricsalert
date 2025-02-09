@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
+	log "github.com/sirupsen/logrus"
 )
 
 // SignServiceHandler реализует SignService.
@@ -32,7 +33,9 @@ func (s *SignServiceHandler) Validate(token string, body []byte) error {
 	if token == "" {
 		return nil
 	}
+	log.Infof("server: agent token: %s", token)
 	expected := s.ComputedHash(body)
+	log.Infof("server: signature: %s", expected)
 	if token != expected {
 		return errors.New("invalid sign")
 	}

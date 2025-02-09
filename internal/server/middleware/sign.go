@@ -61,7 +61,6 @@ func (rc *responseCapture) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 func SignatureMiddleware(signService services.SignService) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// Для методов, изменяющих состояние, выполняется валидация подписи запроса.
 			if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodPatch {
 				body, err := validateBody(r)
 				if err != nil {
@@ -74,20 +73,14 @@ func SignatureMiddleware(signService services.SignService) func(next http.Handle
 					return
 				}
 			}
-
-			// Вместо немедленной отправки ответа, перехватываем его.
 			rc := newResponseCapture(w)
 			next.ServeHTTP(rc, r)
 
-			// Вычисляем подпись на основе полного тела ответа.
 			newToken := signService.ComputedHash(rc.body.Bytes())
 
-			// Удаляем старый Content-Length, чтобы избежать несоответствия.
 			rc.rw.Header().Del("Content-Length")
-			// Устанавливаем заголовок с вычисленной подписью.
 			rc.rw.Header().Set("HashSHA256", newToken)
 
-			// Отправляем заголовки с сохранённым статусом и записываем тело.
 			rc.rw.WriteHeader(rc.statusCode)
 			_, _ = rc.rw.Write(rc.body.Bytes())
 		})
