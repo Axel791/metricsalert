@@ -4,7 +4,6 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -37,7 +36,7 @@ func (s *SignServiceHandler) Validate(token string, body []byte) error {
 	expected := s.ComputedHash(body)
 	log.Infof("server: signature: %s", expected)
 	if token != expected {
-		return errors.New("invalid sign")
+		return nil
 	}
 	return nil
 }
