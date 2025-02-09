@@ -36,13 +36,16 @@ func main() {
 		log.Fatalf("error loading config: %v", err)
 	}
 
-	addr, databaseDSN, storeIntervalFlag, filePathFlag, restoreFlag := config.ParseFlags(cfg)
+	addr, databaseDSN, storeIntervalFlag, filePathFlag, restoreFlag, key := config.ParseFlags(cfg)
 
 	cfg.Address = addr
 	cfg.DatabaseDSN = databaseDSN
 	cfg.StoreInterval = storeIntervalFlag
 	cfg.FileStoragePath = filePathFlag
 	cfg.Restore = restoreFlag
+	cfg.Key = key
+
+	log.Infof("start server with key: %s", cfg.Key)
 
 	if !validators.IsValidAddress(cfg.Address, false) {
 		log.Fatalf("invalid address: %s\n", cfg.Address)
@@ -58,8 +61,11 @@ func main() {
 		}
 	}()
 
+	signService := services.NewSignService(key)
+
 	router := chi.NewRouter()
 	router.Use(serverMiddleware.WithLogging)
+	router.Use(serverMiddleware.SignatureMiddleware(signService))
 	router.Use(serverMiddleware.GzipMiddleware)
 	router.Use(middleware.StripSlashes)
 
