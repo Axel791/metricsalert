@@ -3,7 +3,7 @@ package services
 import (
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/hex"
+	"encoding/base64"
 )
 
 type AuthServiceHandler struct {
@@ -22,5 +22,5 @@ func (s *AuthServiceHandler) ComputeHash(body []byte) string {
 	hash := hmac.New(sha256.New, []byte(s.key))
 	hash.Write(body)
 
-	return hex.EncodeToString(hash.Sum(nil))
+	return base64.StdEncoding.EncodeToString(hash.Sum(nil))
 }

@@ -34,7 +34,6 @@ func (h *UpdatesMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 
 	ctx := r.Context()
-	log.Infof("input: %v", input)
 	if err := h.metricService.BatchMetricsUpdate(ctx, input); err != nil {
 		h.logger.Errorf("UpdateMetricHandler: failed to update metrics: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)

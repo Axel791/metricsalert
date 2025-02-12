@@ -3,7 +3,7 @@ package services
 import (
 	"crypto/hmac"
 	"crypto/sha256"
-	"encoding/hex"
+	"encoding/base64"
 )
 
 // SignServiceHandler реализует SignService.
@@ -23,7 +23,7 @@ func (s *SignServiceHandler) ComputedHash(body []byte) string {
 	}
 	hash := hmac.New(sha256.New, []byte(s.key))
 	hash.Write(body)
-	return hex.EncodeToString(hash.Sum(nil))
+	return base64.StdEncoding.EncodeToString(hash.Sum(nil))
 }
 
 // Validate сравнивает переданный токен с вычисленным для тела.

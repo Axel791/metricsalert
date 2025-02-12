@@ -63,7 +63,7 @@ func SignatureMiddleware(signService services.SignService) func(next http.Handle
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if r.Method == http.MethodPost || r.Method == http.MethodPut || r.Method == http.MethodPatch {
-				body, err := validateBody(r)
+				body, err := readBody(r)
 				if err != nil {
 					http.Error(w, "error read body", http.StatusBadRequest)
 					return
@@ -89,7 +89,7 @@ func SignatureMiddleware(signService services.SignService) func(next http.Handle
 }
 
 // validateBody читает и возвращает тело запроса, а затем восстанавливает r.Body.
-func validateBody(r *http.Request) ([]byte, error) {
+func readBody(r *http.Request) ([]byte, error) {
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return nil, err
