@@ -4,7 +4,7 @@ import (
 	"flag"
 )
 
-func ParseFlags(cfg *Config) (string, string, int64, string, bool) {
+func ParseFlags(cfg *Config) (string, string, int64, string, bool, string) {
 	addr := flag.String("a", cfg.Address, "HTTP server address")
 	databaseDSN := flag.String("d", cfg.DatabaseDSN, "database DSN")
 
@@ -13,8 +13,9 @@ func ParseFlags(cfg *Config) (string, string, int64, string, bool) {
 	)
 	filePathFlag := flag.String("f", cfg.FileStoragePath, "path to file for storing metrics")
 	restoreFlag := flag.Bool("r", cfg.Restore, "restore metrics from file on start (true/false)")
+	key := flag.String("k", cfg.Key, "secret key")
 
 	flag.Parse()
 
-	return *addr, *databaseDSN, *storeIntervalFlag, *filePathFlag, *restoreFlag
+	return *addr, *databaseDSN, *storeIntervalFlag, *filePathFlag, *restoreFlag, *key
 }

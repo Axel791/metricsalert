@@ -15,7 +15,10 @@ type UpdatesMetricsHandler struct {
 	logger        *log.Logger
 }
 
-func NewUpdatesMetricsHandler(metricService services.Metric, logger *log.Logger) *UpdatesMetricsHandler {
+func NewUpdatesMetricsHandler(
+	metricService services.Metric,
+	logger *log.Logger,
+) *UpdatesMetricsHandler {
 	return &UpdatesMetricsHandler{
 		metricService: metricService,
 		logger:        logger,
@@ -31,12 +34,10 @@ func (h *UpdatesMetricsHandler) ServeHTTP(w http.ResponseWriter, r *http.Request
 	}
 
 	ctx := r.Context()
-
 	if err := h.metricService.BatchMetricsUpdate(ctx, input); err != nil {
 		h.logger.Errorf("UpdateMetricHandler: failed to update metrics: %v", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
 	w.WriteHeader(http.StatusOK)
 }
