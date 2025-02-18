@@ -15,7 +15,10 @@ type UpdateMetricHandler struct {
 	logger        *log.Logger
 }
 
-func NewUpdateMetricHandler(metricService services.Metric, logger *log.Logger) *UpdateMetricHandler {
+func NewUpdateMetricHandler(
+	metricService services.Metric,
+	logger *log.Logger,
+) *UpdateMetricHandler {
 	return &UpdateMetricHandler{
 		metricService: metricService,
 		logger:        logger,
@@ -36,7 +39,6 @@ func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	if err := json.NewEncoder(w).Encode(metricDTO); err != nil {

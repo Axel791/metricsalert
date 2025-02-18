@@ -12,7 +12,9 @@ type GetMetricsHTMLHandler struct {
 	metricService services.Metric
 }
 
-func NewGetMetricsHTMLHandler(metricService services.Metric) *GetMetricsHTMLHandler {
+func NewGetMetricsHTMLHandler(
+	metricService services.Metric,
+) *GetMetricsHTMLHandler {
 	return &GetMetricsHTMLHandler{metricService: metricService}
 }
 

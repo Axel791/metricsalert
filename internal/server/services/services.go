@@ -13,3 +13,8 @@ type Metric interface {
 	GetAllMetric(ctx context.Context) ([]dto.Metrics, error)
 	BatchMetricsUpdate(ctx context.Context, metrics []api.Metrics) error
 }
+
+type SignService interface {
+	Validate(token string, body []byte) error
+	ComputedHash(body []byte) string
+}

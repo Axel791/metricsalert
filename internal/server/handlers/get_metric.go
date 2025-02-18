@@ -16,7 +16,10 @@ type GetMetricHandler struct {
 	logger        *log.Logger
 }
 
-func NewGetMetricHandler(metricService services.Metric, logger *log.Logger) *GetMetricHandler {
+func NewGetMetricHandler(
+	metricService services.Metric,
+	logger *log.Logger,
+) *GetMetricHandler {
 	return &GetMetricHandler{
 		metricService: metricService,
 		logger:        logger,
@@ -31,8 +34,6 @@ func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
-
-	h.logger.Infof("MTYpe: %s ID: %s", input.MType, input.ID)
 
 	metricDTO, err := h.metricService.GetMetric(r.Context(), input.MType, input.ID)
 	if err != nil {
