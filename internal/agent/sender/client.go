@@ -102,8 +102,6 @@ func (client *MetricClient) sendMetricsBatch(metricsList []api.MetricPost) error
 
 	token := client.authService.ComputeHash(compressedBody)
 
-	client.logger.Infof("agent token: %s", token)
-
 	if token != "" {
 		headers.Set("HashSHA256", token)
 	}

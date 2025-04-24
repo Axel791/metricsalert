@@ -22,6 +22,7 @@ import (
 
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
+	_ "net/http/pprof"
 )
 
 func main() {
@@ -124,6 +125,12 @@ func main() {
 		"/value/{metricType}/{name}",
 		deprecated.NewGetMetricHandler(storage),
 	)
+
+	go func() {
+		if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+			log.Errorf("pprof server: %v", err)
+		}
+	}()
 
 	log.Infof("server started on %s", cfg.Address)
 	err = http.ListenAndServe(cfg.Address, router)
