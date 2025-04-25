@@ -7,12 +7,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/Axel791/metricsalert/internal/server/model/domain"
-	"github.com/Axel791/metricsalert/internal/server/model/dto"
-	"github.com/Axel791/metricsalert/internal/server/services/mock"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/guregu/null.v4"
+
+	"github.com/Axel791/metricsalert/internal/server/model/domain"
+	"github.com/Axel791/metricsalert/internal/server/model/dto"
+	"github.com/Axel791/metricsalert/internal/server/services/mock"
 )
 
 func TestGetMetricsHTMLHandler_ServeHTTP(t *testing.T) {

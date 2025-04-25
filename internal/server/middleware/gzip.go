@@ -16,6 +16,7 @@ var gzipWriterPool = sync.Pool{
 		return w
 	},
 }
+
 var gzipReaderPool = sync.Pool{
 	New: func() any { return new(gzip.Reader) },
 }

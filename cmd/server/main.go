@@ -20,9 +20,10 @@ import (
 	"github.com/Axel791/metricsalert/internal/server/services"
 	"github.com/Axel791/metricsalert/internal/shared/validators"
 
+	_ "net/http/pprof"
+
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
-	_ "net/http/pprof"
 )
 
 func main() {

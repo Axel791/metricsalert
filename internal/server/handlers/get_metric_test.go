@@ -5,11 +5,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
-	"github.com/Axel791/metricsalert/internal/server/model/domain"
-	"gopkg.in/guregu/null.v4"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"gopkg.in/guregu/null.v4"
+
+	"github.com/Axel791/metricsalert/internal/server/model/domain"
 
 	"github.com/Axel791/metricsalert/internal/server/model/api"
 	"github.com/Axel791/metricsalert/internal/server/model/dto"
@@ -88,7 +90,7 @@ func TestGetMetricHandler_ServeHTTP(t *testing.T) {
 				MType: "invalidType",
 				ID:    "",
 			},
-			mockSetup:      func(m *mock.MockMetric) {},
+			mockSetup:      func(_ *mock.MockMetric) {},
 			expectedStatus: http.StatusBadRequest,
 			expectedBody:   "invalid request body",
 		},
