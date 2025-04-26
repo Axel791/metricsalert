@@ -5,7 +5,7 @@ import (
 	"github.com/spf13/viper"
 )
 
-// Config структура для хранения конфигурации
+// Config - структура для хранения конфигурации
 type Config struct {
 	Address         string `mapstructure:"ADDRESS"`
 	StoreInterval   int64  `mapstructure:"STORE_INTERVAL"`
@@ -17,7 +17,7 @@ type Config struct {
 	Key             string `mapstructure:"KEY"`
 }
 
-// ServerLoadConfig загружает конфигурацию из .env, переменных окружения и задает значения по умолчанию
+// ServerLoadConfig - загружает конфигурацию из .env, переменных окружения и задает значения по умолчанию
 func ServerLoadConfig() (*Config, error) {
 	viper.SetConfigName(".env")
 	viper.SetConfigType("env")

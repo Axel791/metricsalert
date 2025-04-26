@@ -9,7 +9,7 @@ import (
 	"github.com/jackc/pgconn"
 )
 
-// RetryOperation выполняет операцию с повторными попытками при ошибке транспорта.
+// RetryOperation - выполняет операцию с повторными попытками при ошибке транспорта.
 func RetryOperation(operation func() error) error {
 	retries := []time.Duration{1 * time.Second, 3 * time.Second, 5 * time.Second}
 

@@ -14,14 +14,17 @@ const (
 	Counter = "counter"
 )
 
+// UpdateMetricHandler - структура хэндлера обновления метрик [устаревший]
 type UpdateMetricHandler struct {
 	storage repositories.Store
 }
 
+// NewUpdateMetricHandler - конструктор хэндлера обновления метрик [устаревший]
 func NewUpdateMetricHandler(storage repositories.Store) *UpdateMetricHandler {
 	return &UpdateMetricHandler{storage}
 }
 
+// ServeHTTP - обработчик запроса
 func (h *UpdateMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	metricType := chi.URLParam(r, "metricType")
 	name := chi.URLParam(r, "name")
