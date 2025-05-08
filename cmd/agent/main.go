@@ -19,6 +19,12 @@ import (
 	"github.com/Axel791/metricsalert/internal/agent/model/api"
 )
 
+var (
+	buildVersion = "N/A"
+	buildDate    = "N/A"
+	buildCommit  = "N/A"
+)
+
 // collectMetricsLoop собирает runtime-метрики и обновляет только соответствующие поля.
 func collectMetricsLoop(pollInterval time.Duration, mu *sync.RWMutex, metrics *api.Metrics, pollCount *int64) {
 	ticker := time.NewTicker(pollInterval)
@@ -154,7 +160,9 @@ func main() {
 	})
 	log.SetLevel(logrus.InfoLevel)
 
-	log.Infof("agent started")
+	log.Infof("Build version: %s", buildVersion)
+	log.Infof("Build date:    %s", buildDate)
+	log.Infof("Build commit:  %s", buildCommit)
 
 	cfg, err := config.AgentLoadConfig()
 	if err != nil {
