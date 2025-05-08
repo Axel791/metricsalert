@@ -26,6 +26,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var (
+	buildVersion = "N/A"
+	buildDate    = "N/A"
+	buildCommit  = "N/A"
+)
+
 func main() {
 	log := logrus.New()
 
@@ -34,6 +40,10 @@ func main() {
 		TimestampFormat: "2006-01-02 15:04:05",
 	})
 	log.SetLevel(logrus.InfoLevel)
+
+	log.Infof("Build version: %s", buildVersion)
+	log.Infof("Build date:    %s", buildDate)
+	log.Infof("Build commit:  %s", buildCommit)
 
 	cfg, err := config.ServerLoadConfig()
 	if err != nil {
@@ -128,7 +138,7 @@ func main() {
 	)
 
 	go func() {
-		if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+		if err = http.ListenAndServe("localhost:6060", nil); err != nil {
 			log.Errorf("pprof server: %v", err)
 		}
 	}()
