@@ -20,6 +20,8 @@ import (
 	"github.com/Axel791/metricsalert/internal/server/services"
 	"github.com/Axel791/metricsalert/internal/shared/validators"
 
+	_ "net/http/pprof"
+
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 )
@@ -124,6 +126,12 @@ func main() {
 		"/value/{metricType}/{name}",
 		deprecated.NewGetMetricHandler(storage),
 	)
+
+	go func() {
+		if err := http.ListenAndServe("localhost:6060", nil); err != nil {
+			log.Errorf("pprof server: %v", err)
+		}
+	}()
 
 	log.Infof("server started on %s", cfg.Address)
 	err = http.ListenAndServe(cfg.Address, router)

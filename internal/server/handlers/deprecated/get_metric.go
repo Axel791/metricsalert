@@ -12,14 +12,17 @@ import (
 	"github.com/Axel791/metricsalert/internal/server/repositories"
 )
 
+// GetMetricHandler - структура хэндлера получения метрик [устаревший]
 type GetMetricHandler struct {
 	storage repositories.Store
 }
 
+// NewGetMetricHandler - клнструктор хэндлера для получения метрик [устаревший]
 func NewGetMetricHandler(storage repositories.Store) *GetMetricHandler {
 	return &GetMetricHandler{storage}
 }
 
+// ServeHTTP - обработчик запроса
 func (h *GetMetricHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	metricType := chi.URLParam(r, "metricType")
 	name := chi.URLParam(r, "name")
