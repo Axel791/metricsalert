@@ -1,6 +1,7 @@
 package main
 
 import (
+	"crypto/rsa"
 	"math/rand"
 	"sync"
 	"time"
@@ -12,6 +13,7 @@ import (
 	"github.com/Axel791/metricsalert/internal/agent/services"
 	"github.com/Axel791/metricsalert/internal/shared/validators"
 
+	cryptoutil "github.com/Axel791/metricsalert/internal/agent/crypto"
 	"github.com/sirupsen/logrus"
 
 	"github.com/Axel791/metricsalert/internal/agent/collector"
@@ -124,13 +126,29 @@ func collectSystemMetricsLoop(pollInterval time.Duration, mu *sync.RWMutex, metr
 }
 
 // runAgent объединяет запуск сборщиков метрик, worker pool и т.д.
-func runAgent(address string, reportInterval, pollInterval time.Duration, log *logrus.Logger, key string, rateLimit int) {
+func runAgent(
+	address string,
+	reportInterval, pollInterval time.Duration,
+	log *logrus.Logger,
+	cryptoKey, key string,
+	rateLimit int,
+) {
 	if !validators.IsValidAddress(address, true) {
 		log.Fatalf("invalid address: %s\n", address)
 	}
 
 	authService := services.NewAuthServiceHandler(key)
-	metricClient := sender.NewMetricClient(address, log, authService)
+	var rsaPub *rsa.PublicKey
+	if cryptoKey != "" {
+		var err error
+		rsaPub, err = cryptoutil.LoadPublic(cryptoKey)
+		if err != nil {
+			log.Fatalf("RSA key error: %v", err)
+		}
+		log.Info("RSA encryption enabled")
+	}
+
+	metricClient := sender.NewMetricClient(address, log, authService, rsaPub)
 
 	sendCh := make(chan api.Metrics, rateLimit)
 
@@ -168,10 +186,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("error loading config: %v\n", err)
 	}
-	address, reportInterval, pollInterval, key, rateLimit := config.ParseFlags(cfg)
+	address, reportInterval, pollInterval, cryptoKey, key, rateLimit := config.ParseFlags(cfg)
 
+	cfg.CryptoKey = cryptoKey
 	cfg.Key = key
 	cfg.RateLimit = rateLimit
 
-	runAgent(address, reportInterval, pollInterval, log, key, rateLimit)
+	runAgent(address, reportInterval, pollInterval, log, cryptoKey, key, rateLimit)
 }

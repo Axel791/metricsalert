@@ -20,3 +20,8 @@ type SignService interface {
 	Validate(token string, body []byte) error
 	ComputedHash(body []byte) string
 }
+
+// CryptoService предоставляет расшифровку OAEP-RSA-SHA-256.
+type CryptoService interface {
+	Decrypt(cipherText []byte) ([]byte, error)
+}

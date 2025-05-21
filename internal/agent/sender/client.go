@@ -3,6 +3,9 @@ package sender
 import (
 	"bytes"
 	"compress/gzip"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -28,15 +31,22 @@ type MetricClient struct {
 	logger      *log.Logger
 	authService services.AuthService
 	baseURL     string
+	pubKey      *rsa.PublicKey
 }
 
-func NewMetricClient(baseURL string, logger *log.Logger, authService services.AuthService) *MetricClient {
+func NewMetricClient(
+	baseURL string,
+	logger *log.Logger,
+	authService services.AuthService,
+	pubKey *rsa.PublicKey,
+) *MetricClient {
 	client := httpclient.NewClient()
 	return &MetricClient{
 		httpClient:  client,
 		authService: authService,
 		baseURL:     baseURL,
 		logger:      logger,
+		pubKey:      pubKey,
 	}
 }
 
@@ -90,7 +100,6 @@ func (client *MetricClient) sendMetricsBatch(metricsList []api.MetricPost) error
 	if err != nil {
 		return fmt.Errorf("failed to marshal metrics batch: %w", err)
 	}
-
 	compressedBody, err := compressData(body)
 	if err != nil {
 		return fmt.Errorf("failed to compress metrics batch: %w", err)
@@ -100,10 +109,21 @@ func (client *MetricClient) sendMetricsBatch(metricsList []api.MetricPost) error
 	headers.Set("Content-Type", "application/json")
 	headers.Set("Content-Encoding", "gzip")
 
-	token := client.authService.ComputeHash(compressedBody)
+	payload := compressedBody
 
-	if token != "" {
-		headers.Set("HashSHA256", token)
+	if client.pubKey != nil {
+		payload, err = rsa.EncryptOAEP(
+			sha256.New(), rand.Reader, client.pubKey, compressedBody, nil,
+		)
+		if err != nil {
+			return fmt.Errorf("failed to encrypt metrics batch: %w", err)
+		}
+		headers.Set("Content-Encryption", "rsa-oaep-sha256")
+	} else {
+		token := client.authService.ComputeHash(compressedBody)
+		if token != "" {
+			headers.Set("HashSHA256", token)
+		}
 	}
 
 	u, err := url.Parse(fmt.Sprintf("%s/updates", client.baseURL))
@@ -111,7 +131,7 @@ func (client *MetricClient) sendMetricsBatch(metricsList []api.MetricPost) error
 		return fmt.Errorf("failed to parse URL: %w", err)
 	}
 
-	rsp, err := client.httpClient.Post(u.String(), bytes.NewBuffer(compressedBody), headers)
+	rsp, err := client.httpClient.Post(u.String(), bytes.NewBuffer(payload), headers)
 	if err != nil {
 		return fmt.Errorf("failed to send metrics batch: %w", err)
 	}
@@ -124,7 +144,6 @@ func (client *MetricClient) sendMetricsBatch(metricsList []api.MetricPost) error
 	client.logger.Infof("Successfully sent metrics batch: %d metrics", len(metricsList))
 	return nil
 }
-
 func (client *MetricClient) healthCheck() error {
 	u, err := url.Parse(fmt.Sprintf("%s/healthcheck", client.baseURL))
 	if err != nil {

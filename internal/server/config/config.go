@@ -12,6 +12,7 @@ type Config struct {
 	DatabaseDSN     string `mapstructure:"DATABASE_DSN"`
 	MigrationsPath  string `mapstructure:"MIGRATIONS_PATH"`
 	Key             string `mapstructure:"KEY"`
+	CryptoKey       string `mapstructure:"CRYPTO_KEY"`
 
 	StoreInterval  int64 `mapstructure:"STORE_INTERVAL"`
 	Restore        bool  `mapstructure:"RESTORE"`
@@ -40,6 +41,7 @@ func ServerLoadConfig() (*Config, error) {
 	_ = viper.BindEnv("USE_FILE_STORAGE", "USE_FILE_STORAGE")
 	_ = viper.BindEnv("DATABASE_DSN", "DATABASE_DSN")
 	_ = viper.BindEnv("KEY", "KEY")
+	_ = viper.BindEnv("CRYPTO_KEY", "CRYPTO_KEY")
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Infof("filed find file config set defoult value: %v", err)
