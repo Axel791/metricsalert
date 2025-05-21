@@ -38,7 +38,7 @@ func (ms *MetricsService) GetMetric(ctx context.Context, metricType, name string
 
 	metricsDomain, err := ms.store.GetMetric(ctx, metric)
 	if err != nil {
-		return metricsDTO, fmt.Errorf("GetMetric: error getting metric domain: %v", err)
+		return metricsDTO, fmt.Errorf("GetMetric: error getting metric domain: %w", err)
 	}
 
 	if metricsDomain.Name == "" {
@@ -100,12 +100,12 @@ func (ms *MetricsService) CreateOrUpdateMetric(ctx context.Context, metricAPI ap
 	case domain.Counter:
 		updatedMetric, err = ms.store.UpdateCounter(ctx, metric.Name, metric.Delta.Int64)
 		if err != nil {
-			return metricsDTO, fmt.Errorf("UpdateMetric (counter): %v", err)
+			return metricsDTO, fmt.Errorf("UpdateMetric (counter): %w", err)
 		}
 	case domain.Gauge:
 		updatedMetric, err = ms.store.UpdateGauge(ctx, metric.Name, metric.Value.Float64)
 		if err != nil {
-			return metricsDTO, fmt.Errorf("UpdateMetric (gauge): %v", err)
+			return metricsDTO, fmt.Errorf("UpdateMetric (gauge): %w", err)
 		}
 	default:
 		return metricsDTO, fmt.Errorf("unsupported metric type: %s", metric.MType)
@@ -127,7 +127,7 @@ func (ms *MetricsService) GetAllMetric(ctx context.Context) ([]dto.Metrics, erro
 
 	metricsMap, err := ms.store.GetAllMetrics(ctx)
 	if err != nil {
-		return metricsDTO, fmt.Errorf("GetAllMetrics: error getting from store: %v", err)
+		return metricsDTO, fmt.Errorf("GetAllMetrics: error getting from store: %w", err)
 	}
 
 	for _, domainM := range metricsMap {
@@ -175,7 +175,7 @@ func (ms *MetricsService) BatchMetricsUpdate(ctx context.Context, metrics []api.
 				)
 			}
 			if err := d.SetMetricValue(*m.Delta); err != nil {
-				return fmt.Errorf("BatchMetricsUpdate: metric '%s': %v", m.ID, err)
+				return fmt.Errorf("BatchMetricsUpdate: metric '%s': %w", m.ID, err)
 			}
 		case domain.Gauge:
 			if m.Value == nil {
@@ -185,7 +185,7 @@ func (ms *MetricsService) BatchMetricsUpdate(ctx context.Context, metrics []api.
 				)
 			}
 			if err := d.SetMetricValue(*m.Value); err != nil {
-				return fmt.Errorf("BatchMetricsUpdate: metric '%s': %v", m.ID, err)
+				return fmt.Errorf("BatchMetricsUpdate: metric '%s': %w", m.ID, err)
 			}
 		default:
 			return fmt.Errorf("BatchMetricsUpdate: metric '%s': unsupported metric type '%s'", m.ID, m.MType)
@@ -218,7 +218,7 @@ func (ms *MetricsService) BatchMetricsUpdate(ctx context.Context, metrics []api.
 	}
 
 	if err := ms.store.BatchUpdateMetrics(ctx, uniqMetrics); err != nil {
-		return fmt.Errorf("BatchMetricsUpdate: error batch update failed: %v", err)
+		return fmt.Errorf("BatchMetricsUpdate: error batch update failed: %w", err)
 	}
 	return nil
 }

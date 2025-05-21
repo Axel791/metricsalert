@@ -8,13 +8,14 @@ import (
 // Config - структура для хранения конфигурации
 type Config struct {
 	Address         string `mapstructure:"ADDRESS"`
-	StoreInterval   int64  `mapstructure:"STORE_INTERVAL"`
 	FileStoragePath string `mapstructure:"FILE_STORAGE_PATH"`
-	Restore         bool   `mapstructure:"RESTORE"`
-	UseFileStorage  bool   `mapstructure:"USE_FILE_STORAGE"`
 	DatabaseDSN     string `mapstructure:"DATABASE_DSN"`
 	MigrationsPath  string `mapstructure:"MIGRATIONS_PATH"`
 	Key             string `mapstructure:"KEY"`
+
+	StoreInterval  int64 `mapstructure:"STORE_INTERVAL"`
+	Restore        bool  `mapstructure:"RESTORE"`
+	UseFileStorage bool  `mapstructure:"USE_FILE_STORAGE"`
 }
 
 // ServerLoadConfig - загружает конфигурацию из .env, переменных окружения и задает значения по умолчанию

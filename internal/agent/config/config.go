@@ -7,11 +7,12 @@ import (
 
 // Config структура для хранения конфигурации
 type Config struct {
-	Address        string `mapstructure:"ADDRESS"`
-	ReportInterval int64  `mapstructure:"REPORT_INTERVAL"`
-	PollInterval   int64  `mapstructure:"POLL_INTERVAL"`
-	Key            string `mapstructure:"KEY"`
-	RateLimit      int    `mapstructure:"RATE_LIMIT"`
+	Address string `mapstructure:"ADDRESS"`
+	Key     string `mapstructure:"KEY"`
+
+	ReportInterval int64 `mapstructure:"REPORT_INTERVAL"`
+	PollInterval   int64 `mapstructure:"POLL_INTERVAL"`
+	RateLimit      int   `mapstructure:"RATE_LIMIT"`
 }
 
 // AgentLoadConfig загружает конфигурацию из .env, переменных окружения и задает значения по умолчанию
