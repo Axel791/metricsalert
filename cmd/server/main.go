@@ -45,6 +45,8 @@ func main() {
 	path := "server_config.json"
 	shared.LoadEnvFromFile(log, path)
 
+	ctx := shared.CatchShutdown()
+
 	log.Infof("Build version: %s", buildVersion)
 	log.Infof("Build date:    %s", buildDate)
 	log.Infof("Build commit:  %s", buildCommit)
@@ -158,4 +160,11 @@ func main() {
 	if err = http.ListenAndServe(cfg.Address, router); err != nil {
 		log.Fatalf("error starting server: %v", err)
 	}
+
+	<-ctx.Done()
+	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	log.Info("server stopped gracefully")
 }
