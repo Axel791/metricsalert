@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Axel791/metricsalert/internal/shared"
+
 	"github.com/go-chi/chi/v5"
 
 	"github.com/Axel791/metricsalert/internal/server/db"
@@ -39,6 +41,9 @@ func main() {
 		TimestampFormat: "2006-01-02 15:04:05",
 	})
 	log.SetLevel(logrus.InfoLevel)
+
+	path := "server_config.json"
+	shared.LoadEnvFromFile(log, path)
 
 	log.Infof("Build version: %s", buildVersion)
 	log.Infof("Build date:    %s", buildDate)

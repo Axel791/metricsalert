@@ -6,6 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Axel791/metricsalert/internal/shared"
+
 	"github.com/shirou/gopsutil/cpu"
 	"github.com/shirou/gopsutil/mem"
 
@@ -181,6 +183,9 @@ func main() {
 	log.Infof("Build version: %s", buildVersion)
 	log.Infof("Build date:    %s", buildDate)
 	log.Infof("Build commit:  %s", buildCommit)
+
+	path := "agent_config.json"
+	shared.LoadEnvFromFile(log, path)
 
 	cfg, err := config.AgentLoadConfig()
 	if err != nil {
