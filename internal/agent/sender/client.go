@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"google.golang.org/grpc/credentials/insecure"
 	"net/http"
 	"net/url"
 	"strings"
@@ -52,10 +53,21 @@ func NewMetricClient(
 
 	if strings.HasPrefix(baseURL, "grpc://") && useGrpc {
 		addr := strings.TrimPrefix(baseURL, "grpc://")
-		conn, err := grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock())
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		//nolint:staticcheck // DialContext и WithBlock помечены как deprecated, но сохраняются до конца 1.x
+		conn, err := grpc.DialContext(
+			ctx,
+			addr,
+			grpc.WithTransportCredentials(insecure.NewCredentials()),
+			grpc.WithBlock(),
+		)
 		if err != nil {
 			logger.Fatalf("gRPC dial error: %v", err)
 		}
+
 		return &MetricClient{
 			grpcClient: pb.NewMetricsServiceClient(conn),
 			grpcConn:   conn,
@@ -64,7 +76,6 @@ func NewMetricClient(
 			pubKey:     pubKey,
 		}
 	}
-
 	return &MetricClient{
 		httpClient:  httpclient.NewClient(),
 		authService: authService,
