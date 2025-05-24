@@ -56,7 +56,7 @@ func main() {
 		log.Fatalf("error loading config: %v", err)
 	}
 
-	addr, databaseDSN, storeIntervalFlag, filePathFlag, restoreFlag, key, cryptoKey := config.ParseFlags(cfg)
+	addr, databaseDSN, storeIntervalFlag, filePathFlag, restoreFlag, key, cryptoKey, trustedSubnet := config.ParseFlags(cfg)
 
 	cfg.Address = addr
 	cfg.DatabaseDSN = databaseDSN
@@ -65,6 +65,7 @@ func main() {
 	cfg.Restore = restoreFlag
 	cfg.Key = key
 	cfg.CryptoKey = cryptoKey
+	cfg.TrustedSubnet = trustedSubnet
 
 	if !validators.IsValidAddress(cfg.Address, false) {
 		log.Fatalf("invalid address: %s", cfg.Address)
@@ -110,6 +111,9 @@ func main() {
 	}
 	if signSvc != nil {
 		router.Use(serverMiddleware.SignatureMiddleware(signSvc))
+	}
+	if trustedSubnet != "" {
+		router.Use(serverMiddleware.TrustedSubnetMiddleware(trustedSubnet))
 	}
 
 	router.Use(serverMiddleware.GzipMiddleware)
