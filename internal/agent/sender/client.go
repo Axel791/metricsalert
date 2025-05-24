@@ -3,6 +3,7 @@ package sender
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
@@ -10,7 +11,11 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
+
+	pb "github.com/Axel791/metricsalert/internal/metricsgrpc"
+	"google.golang.org/grpc"
 
 	"github.com/Axel791/metricsalert/internal/agent/services"
 
@@ -28,10 +33,13 @@ const (
 
 type MetricClient struct {
 	httpClient  *httpclient.Client
+	grpcClient  pb.MetricsServiceClient
+	grpcConn    *grpc.ClientConn
 	logger      *log.Logger
 	authService services.AuthService
 	baseURL     string
 	pubKey      *rsa.PublicKey
+	useGrpc     bool
 }
 
 func NewMetricClient(
@@ -39,10 +47,26 @@ func NewMetricClient(
 	logger *log.Logger,
 	authService services.AuthService,
 	pubKey *rsa.PublicKey,
+	useGrpc bool,
 ) *MetricClient {
-	client := httpclient.NewClient()
+
+	if strings.HasPrefix(baseURL, "grpc://") && useGrpc {
+		addr := strings.TrimPrefix(baseURL, "grpc://")
+		conn, err := grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock())
+		if err != nil {
+			logger.Fatalf("gRPC dial error: %v", err)
+		}
+		return &MetricClient{
+			grpcClient: pb.NewMetricsServiceClient(conn),
+			grpcConn:   conn,
+			logger:     logger,
+			baseURL:    baseURL,
+			pubKey:     pubKey,
+		}
+	}
+
 	return &MetricClient{
-		httpClient:  client,
+		httpClient:  httpclient.NewClient(),
 		authService: authService,
 		baseURL:     baseURL,
 		logger:      logger,
@@ -83,6 +107,10 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 		{ID: "RandomValue", MType: "gauge", Value: &metrics.RandomValue},
 		{ID: "TotalMemory", MType: "gauge", Value: &metrics.TotalMemory},
 		{ID: "FreeMemory", MType: "gauge", Value: &metrics.FreeMemory},
+	}
+
+	if client.grpcClient != nil {
+		return client.sendMetricsBatchGRPC(metricsList)
 	}
 
 	if err := client.healthCheck(); err != nil {
@@ -144,6 +172,27 @@ func (client *MetricClient) sendMetricsBatch(metricsList []api.MetricPost) error
 	client.logger.Infof("Successfully sent metrics batch: %d metrics", len(metricsList))
 	return nil
 }
+
+func (client *MetricClient) sendMetricsBatchGRPC(list []api.MetricPost) error {
+	pbList := make([]*pb.Metric, 0, len(list))
+	for _, m := range list {
+		p := &pb.Metric{Id: m.ID, MType: m.MType}
+		if m.MType == "gauge" && m.Value != nil {
+			p.Value = *m.Value
+		}
+		if m.MType == "counter" && m.Delta != nil {
+			p.Delta = *m.Delta
+		}
+		pbList = append(pbList, p)
+	}
+	_, err := client.grpcClient.UpdateBatch(context.Background(),
+		&pb.MetricsBatch{Metrics: pbList})
+	if err == nil {
+		client.logger.Infof("gRPC: sent %d metrics", len(list))
+	}
+	return err
+}
+
 func (client *MetricClient) healthCheck() error {
 	u, err := url.Parse(fmt.Sprintf("%s/healthcheck", client.baseURL))
 	if err != nil {

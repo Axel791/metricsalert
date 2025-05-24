@@ -2,8 +2,14 @@ package main
 
 import (
 	"context"
+	"errors"
+	"net"
 	"net/http"
 	"time"
+
+	pb "github.com/Axel791/metricsalert/internal/metricsgrpc"
+	server "github.com/Axel791/metricsalert/internal/server/handlers/grpc"
+	"google.golang.org/grpc"
 
 	"github.com/Axel791/metricsalert/internal/shared"
 
@@ -165,10 +171,28 @@ func main() {
 		log.Fatalf("error starting server: %v", err)
 	}
 
-	<-ctx.Done()
-	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	if cfg.GRPCAddress != "" && cfg.UseGRPC {
+		lis, err := net.Listen("tcp", cfg.GRPCAddress)
+		if err != nil {
+			log.Fatalf("gRPC listen: %v", err)
+		}
 
-	defer cancel()
+		grpcSrv := grpc.NewServer()
 
-	log.Info("server stopped gracefully")
+		pb.RegisterMetricsServiceServer(grpcSrv, server.NewGRPCHandler(metricsService))
+
+		go func() {
+			log.Infof("gRPC server started on %s", cfg.GRPCAddress)
+			if err := grpcSrv.Serve(lis); err != nil && !errors.Is(err, grpc.ErrServerStopped) {
+				log.Fatalf("gRPC serve: %v", err)
+			}
+		}()
+
+		<-ctx.Done()
+		_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+		defer cancel()
+
+		log.Info("server stopped gracefully")
+	}
 }

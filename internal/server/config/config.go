@@ -14,7 +14,9 @@ type Config struct {
 	Key             string `mapstructure:"KEY"`
 	CryptoKey       string `mapstructure:"CRYPTO_KEY"`
 	TrustedSubnet   string `mapstructure:"TRUSTED_SUBNET"`
+	GRPCAddress     string `mapstructure:"GRPC_ADDRESS"`
 
+	UseGRPC        bool  `mapstructure:"USE_GRPC"`
 	StoreInterval  int64 `mapstructure:"STORE_INTERVAL"`
 	Restore        bool  `mapstructure:"RESTORE"`
 	UseFileStorage bool  `mapstructure:"USE_FILE_STORAGE"`

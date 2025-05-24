@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package metrics;
+
+import "google/protobuf/empty.proto";
+
+
+option go_package = "github.com/Axel791/metricsalert/internal/metricsgrpc;metricsgrpc";
+
+message Metric {
+  string id = 1;
+  string m_type = 2;
+  double value = 3;
+  int64  delta = 4;
+}
+
+message MetricsBatch {
+  repeated Metric metrics = 1;
+}
+
+service MetricsService {
+  rpc UpdateBatch (MetricsBatch) returns (google.protobuf.Empty);
+}
