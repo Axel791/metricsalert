@@ -69,7 +69,7 @@ func SignatureMiddleware(signService services.SignService) func(next http.Handle
 					return
 				}
 				token := r.Header.Get("HashSHA256")
-				if err := signService.Validate(token, body); err != nil {
+				if err = signService.Validate(token, body); err != nil {
 					http.Error(w, fmt.Sprintf("invalid sign: %v", err), http.StatusBadRequest)
 					return
 				}

@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/Axel791/metricsalert/internal/shared"
+
 	"github.com/go-chi/chi/v5"
 
 	"github.com/Axel791/metricsalert/internal/server/db"
@@ -34,12 +36,16 @@ var (
 
 func main() {
 	log := logrus.New()
-
 	log.SetFormatter(&logrus.TextFormatter{
 		FullTimestamp:   true,
 		TimestampFormat: "2006-01-02 15:04:05",
 	})
 	log.SetLevel(logrus.InfoLevel)
+
+	path := "server_config.json"
+	shared.LoadEnvFromFile(log, path)
+
+	ctx := shared.CatchShutdown()
 
 	log.Infof("Build version: %s", buildVersion)
 	log.Infof("Build date:    %s", buildDate)
@@ -50,7 +56,7 @@ func main() {
 		log.Fatalf("error loading config: %v", err)
 	}
 
-	addr, databaseDSN, storeIntervalFlag, filePathFlag, restoreFlag, key := config.ParseFlags(cfg)
+	addr, databaseDSN, storeIntervalFlag, filePathFlag, restoreFlag, key, cryptoKey := config.ParseFlags(cfg)
 
 	cfg.Address = addr
 	cfg.DatabaseDSN = databaseDSN
@@ -58,11 +64,13 @@ func main() {
 	cfg.FileStoragePath = filePathFlag
 	cfg.Restore = restoreFlag
 	cfg.Key = key
+	cfg.CryptoKey = cryptoKey
 
 	if !validators.IsValidAddress(cfg.Address, false) {
-		log.Fatalf("invalid address: %s\n", cfg.Address)
+		log.Fatalf("invalid address: %s", cfg.Address)
 	}
 
+	// --- подключаем БД --------------------------------------------------
 	dbConn, err := db.ConnectDB(cfg.DatabaseDSN, cfg)
 	if err != nil {
 		log.Fatalf("error connecting to database: %v", err)
@@ -73,14 +81,41 @@ func main() {
 		}
 	}()
 
-	signService := services.NewSignService(key)
+	// --- создаём сервисы безопасности ----------------------------------
+	var (
+		cryptoSvc services.CryptoService // RSA-расшифровка
+		signSvc   services.SignService   // HMAC-подписи
+	)
 
+	if cfg.CryptoKey != "" {
+		cryptoSvc, err = services.NewCryptoService(cfg.CryptoKey)
+		if err != nil {
+			log.Fatalf("crypto key error: %v", err)
+		}
+		log.Info("RSA decryption enabled")
+	}
+
+	// HMAC-подпись используется, если RSA не включён
+	if cfg.Key != "" && cryptoSvc == nil {
+		signSvc = services.NewSignService(cfg.Key)
+		log.Info("HMAC signature enabled")
+	}
+
+	// --- роутер и middleware -------------------------------------------
 	router := chi.NewRouter()
 	router.Use(serverMiddleware.WithLogging)
-	router.Use(serverMiddleware.SignatureMiddleware(signService))
+
+	if cryptoSvc != nil {
+		router.Use(serverMiddleware.CryptoMiddleware(cryptoSvc))
+	}
+	if signSvc != nil {
+		router.Use(serverMiddleware.SignatureMiddleware(signSvc))
+	}
+
 	router.Use(serverMiddleware.GzipMiddleware)
 	router.Use(middleware.StripSlashes)
 
+	// --- хранилище и сервис метрик -------------------------------------
 	opts := repositories.StoreOptions{
 		FilePath:        cfg.FileStoragePath,
 		RestoreFromFile: cfg.Restore,
@@ -94,58 +129,42 @@ func main() {
 	}
 	metricsService := services.NewMetricsService(storage)
 
-	// Актуальные маршруты
-	router.Method(
-		http.MethodPost,
-		"/update",
-		handlers.NewUpdateMetricHandler(metricsService, log),
-	)
-	router.Method(
-		http.MethodPost,
-		"/updates",
-		handlers.NewUpdatesMetricsHandler(metricsService, log),
-	)
-	router.Method(
-		http.MethodPost,
-		"/value",
-		handlers.NewGetMetricHandler(metricsService, log),
-	)
-	router.Get(
-		"/healthcheck",
-		handlers.NewHealthCheckHandler,
-	)
-	router.Method(
-		http.MethodGet,
-		"/",
-		handlers.NewGetMetricsHTMLHandler(metricsService),
-	)
-	router.Method(
-		http.MethodGet,
-		"/ping",
-		handlers.NewDatabaseHealthCheckHandler(cfg.DatabaseDSN),
-	)
+	// --- актуальные маршруты -------------------------------------------
+	router.Method(http.MethodPost, "/update",
+		handlers.NewUpdateMetricHandler(metricsService, log))
+	router.Method(http.MethodPost, "/updates",
+		handlers.NewUpdatesMetricsHandler(metricsService, log))
+	router.Method(http.MethodPost, "/value",
+		handlers.NewGetMetricHandler(metricsService, log))
+	router.Get("/healthcheck", handlers.NewHealthCheckHandler)
+	router.Method(http.MethodGet, "/",
+		handlers.NewGetMetricsHTMLHandler(metricsService))
+	router.Method(http.MethodGet, "/ping",
+		handlers.NewDatabaseHealthCheckHandler(cfg.DatabaseDSN))
 
-	// Устаревшие маршруты
-	router.Method(
-		http.MethodPost,
-		"/update/{metricType}/{name}/{value}",
-		deprecated.NewUpdateMetricHandler(storage),
-	)
-	router.Method(
-		http.MethodGet,
-		"/value/{metricType}/{name}",
-		deprecated.NewGetMetricHandler(storage),
-	)
+	// --- устаревшие маршруты -------------------------------------------
+	router.Method(http.MethodPost, "/update/{metricType}/{name}/{value}",
+		deprecated.NewUpdateMetricHandler(storage))
+	router.Method(http.MethodGet, "/value/{metricType}/{name}",
+		deprecated.NewGetMetricHandler(storage))
 
+	// --- pprof ----------------------------------------------------------
 	go func() {
 		if err = http.ListenAndServe("localhost:6060", nil); err != nil {
 			log.Errorf("pprof server: %v", err)
 		}
 	}()
 
+	// --- старт ----------------------------------------------------------
 	log.Infof("server started on %s", cfg.Address)
-	err = http.ListenAndServe(cfg.Address, router)
-	if err != nil {
+	if err = http.ListenAndServe(cfg.Address, router); err != nil {
 		log.Fatalf("error starting server: %v", err)
 	}
+
+	<-ctx.Done()
+	_, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
+	defer cancel()
+
+	log.Info("server stopped gracefully")
 }

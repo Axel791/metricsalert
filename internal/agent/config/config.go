@@ -7,8 +7,9 @@ import (
 
 // Config структура для хранения конфигурации
 type Config struct {
-	Address string `mapstructure:"ADDRESS"`
-	Key     string `mapstructure:"KEY"`
+	Address   string `mapstructure:"ADDRESS"`
+	Key       string `mapstructure:"KEY"`
+	CryptoKey string `mapstructure:"CRYPTO_KEY"`
 
 	ReportInterval int64 `mapstructure:"REPORT_INTERVAL"`
 	PollInterval   int64 `mapstructure:"POLL_INTERVAL"`
@@ -26,6 +27,7 @@ func AgentLoadConfig() (*Config, error) {
 	viper.SetDefault("POLL_INTERVAL", 2)
 
 	_ = viper.BindEnv("KEY", "KEY")
+	_ = viper.BindEnv("CRYPTO_KEY", "CRYPTO_KEY")
 	_ = viper.BindEnv("RATE_LIMIT", "RATE_LIMIT")
 
 	viper.AutomaticEnv()

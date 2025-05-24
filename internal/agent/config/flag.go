@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func ParseFlags(cfg *Config) (string, time.Duration, time.Duration, string, int) {
+func ParseFlags(cfg *Config) (string, time.Duration, time.Duration, string, string, int) {
 	address := flag.String("a", cfg.Address, "HTTP server address")
 	reportInterval := flag.Int(
 		"r",
@@ -19,6 +19,11 @@ func ParseFlags(cfg *Config) (string, time.Duration, time.Duration, string, int)
 		"Frequency of collecting metrics from runtime (in seconds)",
 	)
 	key := flag.String("k", cfg.Key, "secret key")
+	cryptoKey := flag.String(
+		"crypto-key",
+		cfg.CryptoKey,
+		"path to PEM public key for RSA encryption (agent)",
+	)
 	rateLimit := flag.Int("l", cfg.RateLimit, "rate limit")
 
 	flag.Parse()
@@ -32,5 +37,6 @@ func ParseFlags(cfg *Config) (string, time.Duration, time.Duration, string, int)
 		time.Duration(*reportInterval) * time.Second,
 		time.Duration(*pollInterval) * time.Second,
 		*key,
+		*cryptoKey,
 		*rateLimit
 }
