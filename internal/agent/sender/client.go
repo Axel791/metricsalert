@@ -9,6 +9,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/credentials/insecure"
 	"net/http"
 	"net/url"
@@ -54,18 +55,18 @@ func NewMetricClient(
 	if strings.HasPrefix(baseURL, "grpc://") && useGrpc {
 		addr := strings.TrimPrefix(baseURL, "grpc://")
 
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-
-		//nolint:staticcheck // DialContext и WithBlock помечены как deprecated, но сохраняются до конца 1.x
-		conn, err := grpc.DialContext(
-			ctx,
+		conn, err := grpc.NewClient(
 			addr,
 			grpc.WithTransportCredentials(insecure.NewCredentials()),
-			grpc.WithBlock(),
 		)
 		if err != nil {
-			logger.Fatalf("gRPC dial error: %v", err)
+			logger.Fatalf("gRPC new client error: %v", err)
+		}
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err = waitUntilReady(ctx, conn); err != nil {
+			logger.Fatalf("gRPC not ready: %v", err)
 		}
 
 		return &MetricClient{
@@ -76,6 +77,7 @@ func NewMetricClient(
 			pubKey:     pubKey,
 		}
 	}
+
 	return &MetricClient{
 		httpClient:  httpclient.NewClient(),
 		authService: authService,
@@ -132,6 +134,21 @@ func (client *MetricClient) SendMetrics(metrics api.Metrics) error {
 		return fmt.Errorf("health check failed: %w", err)
 	}
 	return client.sendMetricsBatch(metricsList)
+}
+
+// waitUntilReady блокируется, пока соединение не станет Ready
+// или пока не истечёт ctx.
+func waitUntilReady(ctx context.Context, conn *grpc.ClientConn) error {
+	for {
+		s := conn.GetState()
+		if s == connectivity.Ready {
+			return nil
+		}
+		// ждём изменения состояния или отмены контекста
+		if !conn.WaitForStateChange(ctx, s) {
+			return ctx.Err() // timeout / cancel
+		}
+	}
 }
 
 func (client *MetricClient) sendMetricsBatch(metricsList []api.MetricPost) error {
