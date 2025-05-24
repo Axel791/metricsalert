@@ -13,10 +13,13 @@ type Config struct {
 	MigrationsPath  string `mapstructure:"MIGRATIONS_PATH"`
 	Key             string `mapstructure:"KEY"`
 	CryptoKey       string `mapstructure:"CRYPTO_KEY"`
+	TrustedSubnet   string `mapstructure:"TRUSTED_SUBNET"`
+	GRPCAddress     string `mapstructure:"GRPC_ADDRESS"`
 
 	StoreInterval  int64 `mapstructure:"STORE_INTERVAL"`
 	Restore        bool  `mapstructure:"RESTORE"`
 	UseFileStorage bool  `mapstructure:"USE_FILE_STORAGE"`
+	UseGRPC        bool  `mapstructure:"USE_GRPC"`
 }
 
 // ServerLoadConfig - загружает конфигурацию из .env, переменных окружения и задает значения по умолчанию
@@ -31,6 +34,7 @@ func ServerLoadConfig() (*Config, error) {
 	viper.SetDefault("RESTORE", true)
 	viper.SetDefault("USE_FILE_STORAGE", true)
 	viper.SetDefault("MIGRATIONS_PATH", "./migrations")
+	viper.SetDefault("USE_GRPC", false)
 
 	viper.AutomaticEnv()
 
@@ -42,6 +46,7 @@ func ServerLoadConfig() (*Config, error) {
 	_ = viper.BindEnv("DATABASE_DSN", "DATABASE_DSN")
 	_ = viper.BindEnv("KEY", "KEY")
 	_ = viper.BindEnv("CRYPTO_KEY", "CRYPTO_KEY")
+	_ = viper.BindEnv("TRUSTED_SUBNET", "TRUSTED_SUBNET")
 
 	if err := viper.ReadInConfig(); err != nil {
 		log.Infof("filed find file config set defoult value: %v", err)

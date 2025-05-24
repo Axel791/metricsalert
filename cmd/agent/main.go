@@ -199,6 +199,7 @@ func runAgent(
 	log *logrus.Logger,
 	cryptoKey, key string,
 	rateLimit int,
+	useGrpc bool,
 ) {
 	if !validators.IsValidAddress(address, true) {
 		log.Fatalf("invalid address: %s\n", address)
@@ -215,7 +216,7 @@ func runAgent(
 		log.Info("RSA encryption enabled")
 	}
 
-	metricClient := sender.NewMetricClient(address, log, authService, rsaPub)
+	metricClient := sender.NewMetricClient(address, log, authService, rsaPub, useGrpc)
 
 	sendCh := make(chan api.Metrics, rateLimit)
 
@@ -282,5 +283,5 @@ func main() {
 	cfg.Key = key
 	cfg.RateLimit = rateLimit
 
-	runAgent(address, reportInterval, pollInterval, log, cryptoKey, key, rateLimit)
+	runAgent(address, reportInterval, pollInterval, log, cryptoKey, key, rateLimit, cfg.UseGRPC)
 }

@@ -4,7 +4,7 @@ import (
 	"flag"
 )
 
-func ParseFlags(cfg *Config) (string, string, int64, string, bool, string, string) {
+func ParseFlags(cfg *Config) (string, string, int64, string, bool, string, string, string) {
 	addr := flag.String("a", cfg.Address, "HTTP server address")
 	databaseDSN := flag.String("d", cfg.DatabaseDSN, "database DSN")
 
@@ -19,8 +19,9 @@ func ParseFlags(cfg *Config) (string, string, int64, string, bool, string, strin
 		cfg.CryptoKey,
 		"path to PEM public key for RSA encryption (agent)",
 	)
+	trustedSubnet := flag.String("t", cfg.TrustedSubnet, "trusted subnet")
 
 	flag.Parse()
 
-	return *addr, *databaseDSN, *storeIntervalFlag, *filePathFlag, *restoreFlag, *key, *cryptoKey
+	return *addr, *databaseDSN, *storeIntervalFlag, *filePathFlag, *restoreFlag, *key, *cryptoKey, *trustedSubnet
 }
